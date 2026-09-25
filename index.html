@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="id" class="dark h-full bg-slate-950 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FotoVibe Studio - Generator Video Multi-Audio & Foto</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f5ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    
+    /* Range Input Custom Styling */
+    input[type=range] { accent-color: #6366f1; }
+  </style>
+</head>
+<body class="h-full flex flex-col overflow-x-hidden bg-slate-950 text-slate-100">
+
+  <!-- Header Navigation -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md px-6 py-3.5 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+        <i class="fa-solid fa-photo-film text-white text-lg"></i>
+      </div>
+      <div>
+        <h1 class="font-bold text-lg leading-tight tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">FotoVibe Studio</h1>
+        <p class="text-xs text-slate-400">Pembuat Video Musik Foto & Multi-Audio Stitch</p>
+      </div>
+    </div>
+
+    <!-- Quick Controls & Export Button -->
+    <div class="flex items-center space-x-4">
+      <!-- Aspect Ratio Switcher -->
+      <div class="flex items-center bg-slate-800 p-1 rounded-lg border border-slate-700/60">
+        <button id="ratio169" onclick="setAspectRatio('16:9')" class="px-3 py-1.5 rounded-md text-xs font-medium transition-all bg-indigo-600 text-white shadow">
+          <i class="fa-solid fa-tv mr-1.5"></i>16:9
+        </button>
+        <button id="ratio916" onclick="setAspectRatio('9:16')" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-mobile-screen mr-1.5"></i>9:16
+        </button>
+        <button id="ratio11" onclick="setAspectRatio('1:1')" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-400 hover:text-white transition-all">
+          <i class="fa-solid fa-square mr-1.5"></i>1:1
+        </button>
+      </div>
+
+      <!-- Generate Video Button -->
+      <button id="generateBtn" onclick="startVideoGeneration()" class="px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-sm shadow-lg shadow-indigo-600/30 transition-all transform active:scale-95 flex items-center space-x-2">
+        <i class="fa-solid fa-wand-magic-sparkles"></i>
+        <span>Generate Video</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Workspace Grid -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1700px] w-full mx-auto">
+    
+    <!-- Left Column: Studio Preview Canvas (7 Cols) -->
+    <section class="lg:col-span-7 flex flex-col space-y-4">
+      
+      <!-- Studio Canvas Player Container -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center relative min-h-[420px] shadow-2xl overflow-hidden group">
+        
+        <!-- Live Canvas Container -->
+        <div id="canvasWrapper" class="relative flex items-center justify-center w-full h-[440px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+          <canvas id="videoCanvas" class="max-w-full max-h-full object-contain rounded shadow-2xl"></canvas>
+          
+          <!-- Empty Canvas Notice Overlay -->
+          <div id="emptyCanvasNotice" class="absolute inset-0 flex flex-col items-center justify-center text-slate-500 p-6 text-center space-y-3">
+            <div class="w-16 h-16 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-400 text-2xl mb-1 border border-slate-700/50">
+              <i class="fa-solid fa-clapperboard"></i>
+            </div>
+            <p class="font-medium text-slate-300">Pratinjau Studio Video</p>
+            <p class="text-xs text-slate-500 max-w-xs">Unggah audio & foto di panel kanan. Audio akan digabungkan secara otomatis.</p>
+          </div>
+        </div>
+
+        <!-- Studio Playback Controls -->
+        <div class="w-full mt-4 flex flex-col space-y-3">
+          
+          <!-- Timeline Slider -->
+          <div class="flex items-center space-x-3">
+            <span id="currentTimeDisplay" class="text-xs font-mono text-indigo-400 min-w-[45px]">00:00</span>
+            <input type="range" id="seekSlider" min="0" max="100" value="0" step="0.1" oninput="onSeekInput(this.value)" class="flex-1 h-2 bg-slate-800 rounded-lg cursor-pointer">
+            <span id="durationTimeDisplay" class="text-xs font-mono text-slate-400 min-w-[45px]">00:00</span>
+          </div>
+
+          <!-- Play/Pause & Effects Switchers -->
+          <div class="flex items-center justify-between pt-1">
+            <div class="flex items-center space-x-2">
+              <button id="playPauseBtn" onclick="togglePlay()" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-md transition">
+                <i id="playIcon" class="fa-solid fa-play"></i>
+              </button>
+              <button onclick="stopPlayback()" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+                <i class="fa-solid fa-stop"></i>
+              </button>
+            </div>
+
+            <!-- Visual Toggle Options -->
+            <div class="flex items-center space-x-4 text-xs">
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="kenBurnsToggle" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                <span class="text-slate-300"><i class="fa-solid fa-up-right-and-down-left-from-center mr-1 text-xs text-slate-400"></i> Efek Ken Burns Zoom</span>
+              </label>
+
+              <label class="flex items-center space-x-2 cursor-pointer select-none">
+                <input type="checkbox" id="transitionToggle" checked class="rounded bg-slate-800 border-slate-700 text-indigo-600 focus:ring-0">
+                <span class="text-slate-300"><i class="fa-solid fa-circle-half-stroke mr-1 text-xs text-slate-400"></i> Crossfade Transisi</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Combined Timeline Visualizer Bar -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg flex flex-col space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-semibold text-slate-300"><i class="fa-solid fa-sliders mr-1.5 text-indigo-400"></i>Visualisasi Marker Timeline Master</span>
+          <span id="audioMergeStatusText" class="text-[11px] font-mono text-indigo-300">Siap</span>
+        </div>
+        <div class="relative w-full h-8 bg-slate-950 rounded-xl overflow-hidden border border-slate-800 p-1 flex items-center">
+          <div id="timelineVisualiser" class="w-full h-full relative flex items-center justify-between gap-0.5 opacity-50"></div>
+          <div id="timelineMarkersTrack" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Column: Multi-Audio & Photos Playlist Management (5 Cols) -->
+    <section class="lg:col-span-5 flex flex-col space-y-4">
+      
+      <!-- Multi-Audio Track Manager Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h2 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-music mr-2 text-indigo-400"></i>Playlist Multi-Audio</h2>
+            <p class="text-xs text-slate-400">Upload banyak lagu & gabung otomatis (Auto-Stitch)</p>
+          </div>
+          <span id="audioCountBadge" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full text-xs font-medium">0 Lagu</span>
+        </div>
+
+        <!-- Multi-Audio Upload Bar -->
+        <div class="my-3">
+          <label class="cursor-pointer block">
+            <div class="w-full py-2.5 px-4 rounded-xl border border-dashed border-indigo-500/40 hover:border-indigo-500 bg-indigo-500/5 hover:bg-indigo-500/10 text-indigo-300 flex items-center justify-center space-x-2 transition text-xs font-medium">
+              <i class="fa-solid fa-cloud-arrow-up text-sm"></i>
+              <span>+ Upload File Audio (Bisa Lebih Dari 1)</span>
+            </div>
+            <input type="file" id="audioMultiInput" accept="audio/*" multiple onchange="handleMultiAudioUpload(event)" class="hidden">
+          </label>
+        </div>
+
+        <!-- Audio Stitching Progress Bar -->
+        <div id="audioMergeProgressContainer" class="hidden mb-3 bg-slate-950 border border-indigo-500/30 rounded-xl p-2.5 space-y-1.5">
+          <div class="flex justify-between items-center text-xs">
+            <span id="audioMergeProgressMsg" class="text-indigo-300 font-medium">Menggabungkan file audio...</span>
+            <i class="fa-solid fa-circle-notch animate-spin text-indigo-400"></i>
+          </div>
+        </div>
+
+        <!-- Audio Playlist List -->
+        <div id="audioPlaylist" class="space-y-2 max-h-[160px] overflow-y-auto pr-1">
+          <div id="emptyAudioNotice" class="text-center py-6 text-slate-500 text-xs flex flex-col items-center space-y-1">
+            <i class="fa-solid fa-music text-2xl text-slate-600 mb-1"></i>
+            <p>Belum ada file audio yang diunggah.</p>
+          </div>
+        </div>
+
+        <!-- Total Combined Audio Duration Footer -->
+        <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-400">Total Durasi Gabungan:</span>
+          <span id="totalAudioDurationDisplay" class="font-mono font-bold text-indigo-400">00:00</span>
+        </div>
+      </div>
+
+      <!-- Photos & Timestamp Timeline Manager Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col flex-1">
+        
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div>
+            <h2 class="font-semibold text-sm text-slate-200"><i class="fa-solid fa-images mr-2 text-indigo-400"></i>Daftar Foto & Timeline</h2>
+            <p class="text-xs text-slate-400">Atur detik muncul foto pada audio gabungan</p>
+          </div>
+          <span id="photoCountBadge" class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2.5 py-0.5 rounded-full text-xs font-medium">0 Foto</span>
+        </div>
+
+        <!-- Photos Action Bar -->
+        <div class="grid grid-cols-2 gap-2 my-3">
+          <label class="cursor-pointer">
+            <div class="w-full py-2 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center space-x-1.5 transition text-xs font-medium shadow-md">
+              <i class="fa-solid fa-plus"></i>
+              <span>Upload Foto</span>
+            </div>
+            <input type="file" id="photosInput" accept="image/*" multiple onchange="handlePhotosUpload(event)" class="hidden">
+          </label>
+
+          <button onclick="autoDistributePhotos()" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center justify-center space-x-1.5 transition text-xs font-medium">
+            <i class="fa-solid fa-bars-staggered text-indigo-400"></i>
+            <span>Ratakan Marker</span>
+          </button>
+        </div>
+
+        <!-- Quick Set Timestamp Button -->
+        <button onclick="addPhotoAtCurrentTime()" class="w-full py-2 px-3 mb-3 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-indigo-300 border border-indigo-500/30 flex items-center justify-center space-x-2 text-xs font-medium transition">
+          <i class="fa-solid fa-stopwatch"></i>
+          <span>Kunci Detik Saat Ini untuk Foto Terpilih</span>
+        </button>
+
+        <!-- Scrollable Photos List -->
+        <div id="photosList" class="flex-1 overflow-y-auto max-h-[300px] space-y-2 pr-1">
+          <div id="emptyPhotosNotice" class="text-center py-10 text-slate-500 text-xs flex flex-col items-center space-y-2">
+            <i class="fa-regular fa-image text-3xl text-slate-600"></i>
+            <p>Belum ada foto yang diunggah.</p>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Video Render Modal Overlay -->
+  <div id="exportModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl flex flex-col space-y-5">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-bold text-base text-slate-100 flex items-center space-x-2">
+          <i class="fa-solid fa-film text-indigo-400"></i>
+          <span>Proses Render Video</span>
+        </h3>
+        <button id="closeModalBtn" onclick="closeExportModal()" class="text-slate-400 hover:text-white hidden">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <!-- Processing Loading View -->
+      <div id="processingState" class="flex flex-col items-center text-center py-4 space-y-4">
+        <div class="relative w-20 h-20 flex items-center justify-center">
+          <div class="absolute inset-0 rounded-full border-4 border-slate-800 border-t-indigo-500 animate-spin"></div>
+          <i class="fa-solid fa-wand-magic-sparkles text-2xl text-indigo-400"></i>
+        </div>
+        <div>
+          <p class="font-semibold text-sm text-slate-200">Merekam Studio Canvas & Master Audio...</p>
+          <p class="text-xs text-slate-400 mt-1">Harap tunggu, audio dan frame disinkronkan dalam video.</p>
+        </div>
+
+        <!-- Export Progress Bar -->
+        <div class="w-full space-y-1">
+          <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+            <div id="exportProgressBar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full w-0 transition-all duration-200"></div>
+          </div>
+          <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+            <span id="exportProgressPercent">0%</span>
+            <span id="exportProgressTime">00:00 / 00:00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Result View -->
+      <div id="successState" class="hidden flex-col items-center space-y-4">
+        <div class="w-full bg-black rounded-xl overflow-hidden border border-slate-800 shadow-inner">
+          <video id="renderedVideoPreview" controls class="w-full max-h-[250px] object-contain"></video>
+        </div>
+        
+        <div class="text-center">
+          <p class="font-semibold text-sm text-green-400"><i class="fa-solid fa-circle-check mr-1.5"></i>Video Berhasil Digenerate!</p>
+          <p class="text-xs text-slate-400 mt-0.5">Latar blurred & audio gabungan telah terintegrasi.</p>
+        </div>
+
+        <a id="downloadVideoBtn" download="fotovibe-video.webm" href="#" class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-medium text-sm flex items-center justify-center space-x-2 shadow-lg shadow-emerald-600/20 transition">
+          <i class="fa-solid fa-download"></i>
+          <span>Download Video (.webm)</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Master Audio Element -->
+  <audio id="audioPlayer" class="hidden"></audio>
+
+  <script>
+    function updateAudioPlaylistUI() {
+      const playlist = document.getElementById('audioPlaylist');
+      const badge = document.getElementById('audioCountBadge');
+
+      badge.textContent = `${audioTracks.length} Lagu`;
+
+      if (audioTracks.length === 0) {
+        playlist.innerHTML = `
+          <div id="emptyAudioNotice" class="text-center py-6 text-slate-500 text-xs flex flex-col items-center space-y-1">
+            <i class="fa-solid fa-music text-2xl text-slate-600 mb-1"></i>
+            <p>Belum ada file audio yang diunggah.</p>
+          </div>
+        `;
+        return;
+      }
+
+      playlist.innerHTML = '';
+
+      audioTracks.forEach((track, idx) => {
+        const item = document.createElement('div');
+        item.className = "p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between text-xs";
+
+        item.innerHTML = `
+          <div class="flex items-center space-x-2.5 min-w-0 flex-1 pr-2">
+            <span class="w-5 h-5 rounded-md bg-indigo-600/20 text-indigo-400 font-mono text-[10px] flex items-center justify-center font-bold flex-shrink-0">${idx + 1}</span>
+            <div class="truncate">
+              <p class="font-medium text-slate-200 truncate">${track.title}</p>
+              <p class="text-[10px] font-mono text-slate-500">${formatTime(track.duration)}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center space-x-1 flex-shrink-0">
+            <button onclick="moveAudioTrack(${idx}, -1)" ${idx === 0 ? 'disabled class="opacity-30 p-1 text-slate-600"' : 'class="p-1 text-slate-400 hover:text-white transition"'}>
+              <i class="fa-solid fa-chevron-up"></i>
+            </button>
+            <button onclick="moveAudioTrack(${idx}, 1)" ${idx === audioTracks.length - 1 ? 'disabled class="opacity-30 p-1 text-slate-600"' : 'class="p-1 text-slate-400 hover:text-white transition"'}>
+              <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <button onclick="removeAudioTrack(${idx})" class="p-1 text-slate-500 hover:text-red-400 transition ml-1">
+              <i class="fa-solid fa-trash-can"></i>
+            </button>
+          </div>
+        `;
+        playlist.appendChild(item);
+      });
+    }
+
+    function generateVisualiserBars() {
+      const container = document.getElementById('timelineVisualiser');
+      container.innerHTML = '';
+      const barCount = 45;
+      for (let i = 0; i < barCount; i++) {
+        const heightPct = audioTracks.length > 0 ? Math.floor(Math.random() * 70) + 20 : 10;
+        const bar = document.createElement('div');
+        bar.className = 'bg-indigo-500 flex-1 rounded-full';
+        bar.style.height = `${heightPct}%`;
+        container.appendChild(bar);
+      }
+    }
+
+    // Photos Upload & Timeline Marker Setup (High Performance & Multi-Photo Safe)
+    async function handlePhotosUpload(event) {
+      const files = Array.from(event.target.files);
+      if (files.length === 0) return;
+
+      // Nonaktifkan input sementara untuk mencegah race-condition
+      event.target.disabled = true;
+
+      // Memproses semua foto secara sejajar (async concurrent) menggunakan Object URL
+      const newPhotoPromises = files.map((file, idx) => {
+        return new Promise((resolve) => {
+          const objectUrl = URL.createObjectURL(file);
+          const img = new Image();
+          
+          img.onload = () => {
+            resolve({
+              id: 'photo_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substr(2, 5),
+              file: file,
+              url: objectUrl,
+              imgObj: img,
+              title: file.name,
+              startTime: 0
+            });
+          };
+
+          img.onerror = () => {
+            console.warn("Gagal memuat gambar:", file.name);
+            URL.revokeObjectURL(objectUrl);
+            resolve(null); // Lewati gambar yang rusak tanpa menghentikan batch foto lainnya
+          };
+
+          img.src = objectUrl;
+        });
+      });
+
+      // Tunggu semua foto selesai didekode
+      const loadedPhotos = (await Promise.all(newPhotoPromises)).filter(p => p !== null);
+
+      if (loadedPhotos.length > 0) {
+        photos = photos.concat(loadedPhotos);
+        autoDistributePhotos();
+        
+        const emptyNotice = document.getElementById('emptyCanvasNotice');
+        if (emptyNotice) emptyNotice.style.display = 'none';
+        
+        renderCanvasFrame(audioElement.currentTime || 0);
+      }
+
+      event.target.disabled = false;
+      event.target.value = '';
+    }
+
+    // Distribute Photo Start Times Evenly
+    function autoDistributePhotos() {
+      if (photos.length === 0) {
+        updatePhotosListUI();
+        return;
+      }
+      const totalTime = totalAudioDuration > 0 ? totalAudioDuration : 30;
+      const interval = totalTime / photos.length;
+
+      photos.forEach((photo, idx) => {
+        photo.startTime = parseFloat((idx * interval).toFixed(1));
+      });
+
+      sortPhotosByStartTime();
+      updatePhotosListUI();
+      renderCanvasFrame(audioElement.currentTime || 0);
+    }
+
+    function sortPhotosByStartTime() {
+      photos.sort((a, b) => a.startTime - b.startTime);
+    }
+
+    function updatePhotosListUI() {
+      const list = document.getElementById('photosList');
+      const badge = document.getElementById('photoCountBadge');
+
+      badge.textContent = `${photos.length} Foto`;
+
+      if (photos.length === 0) {
+        list.innerHTML = `
+          <div id="emptyPhotosNotice" class="text-center py-10 text-slate-500 text-xs flex flex-col items-center space-y-2">
+            <i class="fa-regular fa-image text-3xl text-slate-600"></i>
+            <p>Belum ada foto yang diunggah.</p>
+          </div>
+        `;
+        const emptyCanvasNotice = document.getElementById('emptyCanvasNotice');
+        if (emptyCanvasNotice) emptyCanvasNotice.style.display = 'flex';
+        renderTimelineMarkers();
+        return;
+      }
+
+      const emptyCanvasNotice = document.getElementById('emptyCanvasNotice');
+      if (emptyCanvasNotice) emptyCanvasNotice.style.display = 'none';
+
+      list.innerHTML = '';
+
+      photos.forEach((photo, index) => {
+        const isSelected = photo.id === selectedPhotoId;
+        const item = document.createElement('div');
+        item.className = `p-2 rounded-xl border flex items-center space-x-3 transition cursor-pointer ${
+          isSelected ? 'bg-indigo-900/30 border-indigo-500' : 'bg-slate-950 border-slate-800 hover:border-slate-700'
+        }`;
+        item.onclick = () => selectPhoto(photo.id);
+
+        item.innerHTML = `
+          <div class="w-11 h-11 rounded-lg bg-slate-900 overflow-hidden border border-slate-800 flex-shrink-0 relative">
+            <img src="${photo.url}" class="w-full h-full object-cover">
+            <span class="absolute bottom-0 left-0 right-0 bg-slate-900/80 text-[8px] text-center text-slate-300">#${index + 1}</span>
+          </div>
+
+          <div class="flex-1 min-w-0">
+            <p class="text-xs font-medium text-slate-200 truncate">${photo.title}</p>
+            <div class="flex items-center space-x-2 mt-1">
+              <span class="text-[11px] text-slate-400">Detik:</span>
+              <input type="number" step="0.1" min="0" value="${photo.startTime}" 
+                onclick="event.stopPropagation()" 
+                onchange="updatePhotoTime('${photo.id}', this.value)" 
+                class="w-16 bg-slate-800 border border-slate-700 text-indigo-300 text-xs rounded px-1.5 py-0.5 font-mono focus:outline-none focus:border-indigo-500">
+              <span class="text-[10px] text-slate-500">(${formatTime(photo.startTime)})</span>
+            </div>
+          </div>
+
+          <button type="button" class="btn-delete-photo text-slate-500 hover:text-red-400 p-2 rounded-lg hover:bg-slate-800 transition" title="Hapus Foto">
+            <i class="fa-solid fa-trash-can text-xs pointer-events-none"></i>
+          </button>
+        `;
+
+        // Direct Event Listener Binding
+        const deleteBtn = item.querySelector('.btn-delete-photo');
+        deleteBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          deletePhoto(photo.id);
+        });
+
+        list.appendChild(item);
+      });
+
+      renderTimelineMarkers();
+    }
+
+    function selectPhoto(id) {
+      selectedPhotoId = id;
+      updatePhotosListUI();
+    }
+
+    function updatePhotoTime(id, newTime) {
+      const timeVal = parseFloat(newTime);
+      const photo = photos.find(p => p.id === id);
+      if (photo && !isNaN(timeVal)) {
+        photo.startTime = Math.max(0, timeVal);
+        sortPhotosByStartTime();
+        updatePhotosListUI();
+        renderCanvasFrame(audioElement.currentTime || 0);
+      }
+    }
+
+    function deletePhoto(id) {
+      const targetPhoto = photos.find(p => p.id === id);
+      if (targetPhoto && targetPhoto.url && targetPhoto.url.startsWith('blob:')) {
+        URL.revokeObjectURL(targetPhoto.url);
+      }
+      photos = photos.filter(p => p.id !== id);
+      
+      if (selectedPhotoId === id) {
+        selectedPhotoId = photos.length > 0 ? photos[0].id : null;
+      }
+
+      if (photos.length > 0) {
+        autoDistributePhotos();
+      } else {
+        updatePhotosListUI();
+        renderCanvasFrame(0);
+      }
+    }
+
+    function addPhotoAtCurrentTime() {
+      if (!selectedPhotoId && photos.length > 0) {
+        selectedPhotoId = photos[0].id;
+      }
+      if (!selectedPhotoId) return;
+
+      const currTime = parseFloat((audioElement.currentTime || 0).toFixed(1));
+      updatePhotoTime(selectedPhotoId, currTime);
+    }
+
+    function renderTimelineMarkers() {
+      const track = document.getElementById('timelineMarkersTrack');
+      track.innerHTML = '';
+      if (!totalAudioDuration || photos.length === 0) return;
+
+      photos.forEach((photo) => {
+        const pct = (photo.startTime / totalAudioDuration) * 100;
+        if (pct <= 100) {
+          const marker = document.createElement('div');
+          marker.className = 'absolute top-0 bottom-0 w-0.5 bg-indigo-400 shadow-sm';
+          marker.style.left = `${pct}%`;
+          track.appendChild(marker);
+        }
+      });
+    }
+
+    // Audio Playback Control Handlers
+    function togglePlay() {
+      if (!audioElement.src || isMergingAudio) return;
+
+      if (isPlaying) {
+        audioElement.pause();
+      } else {
+        audioElement.play();
+      }
+    }
+
+    function stopPlayback() {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      updatePlaybackUI();
+      renderCanvasFrame(0);
+    }
+
+    audioElement.onplay = () => {
+      isPlaying = true;
+      document.getElementById('playIcon').className = 'fa-solid fa-pause';
+      requestAnimationFrame(playbackLoop);
+    };
+
+    audioElement.onpause = () => {
+      isPlaying = false;
+      document.getElementById('playIcon').className = 'fa-solid fa-play';
+    };
+
+    audioElement.ontimeupdate = () => {
+      updatePlaybackUI();
+    };
+
+    function updatePlaybackUI() {
+      const curr = audioElement.currentTime || 0;
+      document.getElementById('currentTimeDisplay').textContent = formatTime(curr);
+      document.getElementById('seekSlider').value = curr;
+    }
+
+    function onSeekInput(val) {
+      audioElement.currentTime = parseFloat(val);
+      renderCanvasFrame(audioElement.currentTime);
+    }
+
+    function playbackLoop() {
+      if (isPlaying) {
+        renderCanvasFrame(audioElement.currentTime);
+        requestAnimationFrame(playbackLoop);
+      }
+    }
+
+    // Canvas Frame Rendering Core
+    function renderCanvasFrame(time) {
+      const w = canvas.width;
+      const h = canvas.height;
+
+      ctx.clearRect(0, 0, w, h);
+
+      if (photos.length === 0) return;
+
+      const sorted = [...photos].sort((a, b) => a.startTime - b.startTime);
+
+      let activeIdx = -1;
+      for (let i = 0; i < sorted.length; i++) {
+        if (time >= sorted[i].startTime) {
+          activeIdx = i;
+        } else {
+          break;
+        }
+      }
+
+      if (activeIdx === -1) activeIdx = 0;
+
+      const activePhoto = sorted[activeIdx];
+      const nextPhoto = sorted[activeIdx + 1];
+
+      let nextStartTime = nextPhoto ? nextPhoto.startTime : (totalAudioDuration || time + 10);
+      let photoDuration = nextStartTime - activePhoto.startTime;
+      let photoProgress = photoDuration > 0 ? Math.min(Math.max((time - activePhoto.startTime) / photoDuration, 0), 1) : 1;
+
+      const transitionEnabled = document.getElementById('transitionToggle').checked;
+      let isTransitioning = false;
+      let fadeAlpha = 1;
+
+      if (transitionEnabled && nextPhoto && (nextStartTime - time) < transitionDuration && (nextStartTime - time) > 0) {
+        isTransitioning = true;
+        fadeAlpha = (nextStartTime - time) / transitionDuration;
+      }
+
+      // Draw Active Photo Layer
+      drawPhotoOnCanvas(activePhoto, photoProgress, 1.0);
+
+      // Draw Crossfade Transition Layer
+      if (isTransitioning && nextPhoto) {
+        let nextPhotoProgress = Math.min(Math.max((time - nextPhoto.startTime) / transitionDuration, 0), 1);
+        drawPhotoOnCanvas(nextPhoto, nextPhotoProgress, 1.0 - fadeAlpha);
+      }
+    }
+
+    function drawPhotoOnCanvas(photo, progress, globalAlpha) {
+      if (!photo || !photo.imgObj || !photo.imgObj.complete) return;
+
+      const w = canvas.width;
+      const h = canvas.height;
+      const img = photo.imgObj;
+      const kenBurnsEnabled = document.getElementById('kenBurnsToggle').checked;
+
+      ctx.save();
+      ctx.globalAlpha = globalAlpha;
+
+      // 1. BLURRED BACKGROUND FIT
+      ctx.save();
+      ctx.filter = 'blur(30px) brightness(0.55)';
+
+      const imgAspect = img.width / img.height;
+      const canvasAspect = w / h;
+      let bgW, bgH, bgX, bgY;
+
+      if (imgAspect > canvasAspect) {
+        bgH = h;
+        bgW = h * imgAspect;
+        bgX = (w - bgW) / 2;
+        bgY = 0;
+      } else {
+        bgW = w;
+        bgH = w / imgAspect;
+        bgX = 0;
+        bgY = (h - bgH) / 2;
+      }
+
+      const scaleOverflow = 1.15;
+      ctx.drawImage(
+        img,
+        bgX - (bgW * (scaleOverflow - 1)) / 2,
+        bgY - (bgH * (scaleOverflow - 1)) / 2,
+        bgW * scaleOverflow,
+        bgH * scaleOverflow
+      );
+      ctx.restore();
+
+      // 2. FOREGROUND CRISP PHOTO (CONTAIN)
+      ctx.save();
+
+      if (kenBurnsEnabled) {
+        const scale = 1.0 + (progress * 0.08); // 8% smooth zoom effect
+        ctx.translate(w / 2, h / 2);
+        ctx.scale(scale, scale);
+        ctx.translate(-w / 2, -h / 2);
+      }
+
+      let fgW, fgH, fgX, fgY;
+      const paddingRatio = 0.86;
+      const maxW = w * paddingRatio;
+      const maxH = h * paddingRatio;
+
+      if (img.width / img.height > maxW / maxH) {
+        fgW = maxW;
+        fgH = maxW / imgAspect;
+      } else {
+        fgH = maxH;
+        fgW = maxH * imgAspect;
+      }
+      fgX = (w - fgW) / 2;
+      fgY = (h - fgH) / 2;
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.7)';
+      ctx.shadowBlur = 35;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 15;
+
+      ctx.drawImage(img, fgX, fgY, fgW, fgH);
+
+      ctx.shadowColor = 'transparent';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.lineWidth = 4;
+      ctx.strokeRect(fgX, fgY, fgW, fgH);
+
+      ctx.restore();
+      ctx.restore();
+    }
+
+    // Start Video Recording & Export Pipeline
+    async function startVideoGeneration() {
+      if (audioTracks.length === 0 || !audioElement.src) {
+        return;
+      }
+      if (photos.length === 0) {
+        return;
+      }
+
+      const modal = document.getElementById('exportModal');
+      const processingState = document.getElementById('processingState');
+      const successState = document.getElementById('successState');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      processingState.classList.remove('hidden');
+      successState.classList.add('hidden');
+      closeModalBtn.classList.add('hidden');
+
+      audioElement.pause();
+      audioElement.currentTime = 0;
+
+      // Prepare Web Audio Stream Destination Node
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const sourceNode = audioCtx.createMediaElementSource(audioElement);
+      const destNode = audioCtx.createMediaStreamDestination();
+      
+      sourceNode.connect(destNode);
+      sourceNode.connect(audioCtx.destination);
+
+      const canvasStream = canvas.captureStream(30);
+
+      const combinedTracks = [
+        ...canvasStream.getVideoTracks(),
+        ...destNode.stream.getAudioTracks()
+      ];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      let options = { mimeType: 'video/webm;codecs=vp9,opus' };
+      if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+        options = { mimeType: 'video/webm;codecs=vp8,opus' };
+        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+          options = { mimeType: 'video/webm' };
+        }
+      }
+
+      const mediaRecorder = new MediaRecorder(combinedStream, options);
+      const chunks = [];
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: options.mimeType });
+        const videoUrl = URL.createObjectURL(blob);
+
+        const previewVideo = document.getElementById('renderedVideoPreview');
+        const downloadBtn = document.getElementById('downloadVideoBtn');
+
+        previewVideo.src = videoUrl;
+        downloadBtn.href = videoUrl;
+
+        processingState.classList.add('hidden');
+        successState.classList.remove('hidden');
+        successState.classList.add('flex');
+        closeModalBtn.classList.remove('hidden');
+
+        sourceNode.disconnect();
+      };
+
+      mediaRecorder.start();
+      audioElement.play();
+
+      const progressBar = document.getElementById('exportProgressBar');
+      const percentText = document.getElementById('exportProgressPercent');
+      const timeText = document.getElementById('exportProgressTime');
+
+      const renderInterval = setInterval(() => {
+        const curr = audioElement.currentTime;
+        const dur = audioElement.duration || 1;
+        const pct = Math.min(Math.round((curr / dur) * 100), 100);
+
+        progressBar.style.width = `${pct}%`;
+        percentText.textContent = `${pct}%`;
+        timeText.textContent = `${formatTime(curr)} / ${formatTime(dur)}`;
+
+        renderCanvasFrame(curr);
+
+        if (audioElement.ended || curr >= dur) {
+          clearInterval(renderInterval);
+          mediaRecorder.stop();
+        }
+      }, 1000 / 30);
+    }
+
+    function closeExportModal() {
+      const modal = document.getElementById('exportModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function formatTime(seconds) {
+      if (isNaN(seconds) || seconds < 0) return "00:00";
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    window.onload = () => {
+      updateCanvasDimensions();
+    };
+  </script>
+</body>
+</html>
