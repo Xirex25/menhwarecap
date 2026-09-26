@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>body{font-family:Inter,sans-serif}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}input[type=range]{accent-color:#6366f1}</style>
+  <style>body{font-family:Inter,sans-serif}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}input[type=range]{accent-color:#6366f1}.drag-over{background:#4f46e5!important}.audio-item.dragging{opacity:0.5}canvas{background:radial-gradient(circle,#1e293b,#0f172a)}</style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
 <header class="border-b border-slate-800 bg-slate-900/90 px-4 sm:px-6 py-3 flex flex-wrap gap-3 items-center justify-between sticky top-0 z-40">
@@ -22,12 +22,15 @@
 <div id="exportModal" class="fixed inset-0 hidden items-center justify-center bg-black/80 z-50 p-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h3 class="font-semibold">Export Video</h3><button onclick="closeExportModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button></div><div id="exportStatus" class="text-sm text-slate-300"><div class="flex gap-2 items-center"><i class="fa-solid fa-spinner animate-spin"></i>Mengekspor video...</div><div class="w-full bg-slate-700 rounded-full h-2 mt-3"><div id="exportProgress" class="bg-emerald-500 h-2 rounded-full" style="width:0%"></div></div><p id="exportStatusText" class="mt-2 text-xs text-slate-400">Persiapan...</p></div></div></div>
 <input type="file" id="audioMultiInput" accept="audio/*" multiple class="hidden">
 <input type="file" id="photosInput" accept="image/*" multiple class="hidden">
+<canvas id="blurCanvas" class="hidden"></canvas>
 <audio id="audioPlayer" class="hidden" crossorigin="anonymous"></audio>
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
 const audioElement=$('audioPlayer'),canvas=$('videoCanvas'),ctx=canvas.getContext('2d');
+const blurCanvas=$('blurCanvas'),blurCtx=blurCanvas.getContext('2d');
 let audioTracks=[],photos=[],selectedPhotoId=null,totalAudioDuration=0,isPlaying=false,isMergingAudio=false,aspect='16:9',audioCtx=null;
+let draggedAudioIndex=-1;
 
 const formatTime=s=>{s=Number(s)||0;return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')};
 
@@ -42,6 +45,8 @@ function updateCanvasDimensions(){
   const[w,h]=aspect.split(':').map(Number),max=960;
   canvas.width=w>h?max:Math.round(max*w/h);
   canvas.height=w>h?Math.round(max*h/w):max;
+  blurCanvas.width=canvas.width;
+  blurCanvas.height=canvas.height;
   renderCanvasFrame(audioElement.currentTime||0);
 }
 
@@ -107,15 +112,13 @@ async function handleMultiAudioUpload(e){
     for(let i=0;i<files.length;i++){
       try{
         const file=files[i];
-        console.log('Loading:',file.name,file.type,file.size);
-        
         const buffer=await decodeAudioFile(file);
         if(!buffer){
-          console.warn('Skip:',file.name,'- Buffer invalid');
+          console.warn('Skip:',file.name);
           continue;
         }
         
-        audioTracks.push({name:file.name,buffer});
+        audioTracks.push({name:file.name,buffer,duration:buffer.duration});
         loadedCount++;
         
         const progress=Math.round(loadedCount/files.length*100);
@@ -126,9 +129,7 @@ async function handleMultiAudioUpload(e){
       }
     }
     
-    if(!audioTracks.length){
-      throw new Error('Tidak ada file audio yang berhasil dimuat');
-    }
+    if(!audioTracks.length)throw new Error('Tidak ada file audio yang berhasil dimuat');
     
     $('audioMergeStatusText').textContent='Menggabungkan audio...';
     await new Promise(r=>setTimeout(r,100));
@@ -136,7 +137,6 @@ async function handleMultiAudioUpload(e){
     
     $('audioMergeStatus').classList.add('hidden');
     renderAudioUI();
-    console.log('✓ Audio loading success');
   }catch(err){
     console.error('❌ Audio error:',err);
     alert('Error: '+err.message);
@@ -148,23 +148,14 @@ async function handleMultiAudioUpload(e){
 }
 
 async function decodeAudioFile(file){
-  if(!audioCtx){
-    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-  }
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   
   try{
     const arrayBuffer=await file.arrayBuffer();
-    if(!arrayBuffer||arrayBuffer.byteLength===0){
-      throw new Error('File kosong');
-    }
+    if(!arrayBuffer||arrayBuffer.byteLength===0)throw new Error('File kosong');
     
-    const audioBuffer=await new Promise((resolve,reject)=>{
-      audioCtx.decodeAudioData(arrayBuffer,resolve,reject);
-    });
-    
-    return audioBuffer;
+    return await new Promise((resolve,reject)=>audioCtx.decodeAudioData(arrayBuffer,resolve,reject));
   }catch(e){
-    console.warn('Fallback to audio element for:',file.name);
     return null;
   }
 }
@@ -173,9 +164,7 @@ async function mergeAudioTracks(){
   if(!audioTracks.length)return;
   
   try{
-    if(!audioCtx){
-      audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    }
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
     
     const rate=audioCtx.sampleRate;
     const channels=Math.max(...audioTracks.map(t=>t.buffer.numberOfChannels));
@@ -221,9 +210,7 @@ function audioBufferToWav(audioBuffer){
   const view=new DataView(buffer);
   
   const writeString=(offset,string)=>{
-    for(let i=0;i<string.length;i++){
-      view.setUint8(offset+i,string.charCodeAt(i));
-    }
+    for(let i=0;i<string.length;i++)view.setUint8(offset+i,string.charCodeAt(i));
   };
   
   try{
@@ -244,9 +231,7 @@ function audioBufferToWav(audioBuffer){
     view.setUint32(40,dataSize,true);
     
     const channelData=[];
-    for(let c=0;c<channels;c++){
-      channelData.push(audioBuffer.getChannelData(c));
-    }
+    for(let c=0;c<channels;c++)channelData.push(audioBuffer.getChannelData(c));
     
     let sampleOffset=44;
     for(let i=0;i<length;i++){
@@ -262,7 +247,7 @@ function audioBufferToWav(audioBuffer){
     
     return buffer;
   }catch(err){
-    console.error('WAV encoding error:',err,'buffer size:',bufferSize,'data size:',dataSize);
+    console.error('WAV encoding error:',err);
     throw err;
   }
 }
@@ -270,8 +255,19 @@ function audioBufferToWav(audioBuffer){
 function renderAudioUI(){
   $('audioCountBadge').textContent=audioTracks.length+' Lagu';
   $('totalAudioDurationDisplay').textContent=formatTime(totalAudioDuration);
-  $('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="flex justify-between items-center p-2 bg-slate-800 rounded text-sm"><span class="truncate">${escapeHtml(t.name)}</span><button onclick="removeAudio(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+  $('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="audio-item flex justify-between items-center p-2 bg-slate-800 rounded text-sm cursor-move hover:bg-slate-700 transition" draggable="true" ondragstart="dragStart(${i})" ondragover="dragOver(event)" ondrop="dropAudio(${i})" ondragend="dragEnd()"><div class="flex items-center gap-2 flex-1"><i class="fa-solid fa-grip-vertical text-slate-500"></i><span class="truncate">${escapeHtml(t.name)}</span><span class="text-xs text-slate-400 ml-auto">${formatTime(t.duration||0)}</span></div><button onclick="removeAudio(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button></div>`).join('');
   renderTimelineMarkers();
+}
+
+function dragStart(i){draggedAudioIndex=i;event.target.closest('.audio-item').classList.add('dragging')}
+function dragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over')}
+function dragEnd(){document.querySelectorAll('.audio-item').forEach(el=>el.classList.remove('drag-over','dragging'))}
+function dropAudio(i){
+  if(draggedAudioIndex!==i&&draggedAudioIndex>=0){
+    [audioTracks[draggedAudioIndex],audioTracks[i]]=[audioTracks[i],audioTracks[draggedAudioIndex]];
+    mergeAudioTracks().then(renderAudioUI);
+  }
+  dragEnd();
 }
 
 function removeAudio(i){
@@ -325,7 +321,7 @@ function addPhotoAtCurrentTime(){
 function updatePhotosUI(){
   $('photoCountBadge').textContent=photos.length+' Foto';
   $('emptyCanvasNotice').style.display=photos.length?'none':'flex';
-  $('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div class="p-2 bg-slate-800 rounded"><div class="flex gap-2 mb-1"><div class="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0"><img src="${p.url}" class="w-full h-full object-cover"></div><div class="flex-1"><div class="text-xs text-slate-400">Waktu</div><input type="number" value="${p.startTime}" min="0" step="0.1" onchange="updatePhotoTime(${p.id},this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100"></div><button onclick="deletePhoto(${p.id})" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<p class="text-slate-400 text-sm">Tidak ada foto</p>';
+  $('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div class="p-2 bg-slate-800 rounded"><div class="flex gap-2 mb-2"><div class="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0"><img src="${p.url}" class="w-full h-full object-cover"></div><div class="flex-1"><div class="text-xs text-slate-400 font-semibold">⏱️ ${formatTime(p.startTime)}</div><input type="number" value="${p.startTime}" min="0" step="0.1" onchange="updatePhotoTime(${p.id},this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100"></div><button onclick="deletePhoto(${p.id})" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<p class="text-slate-400 text-sm">Tidak ada foto</p>';
   renderTimelineMarkers();
   renderCanvasFrame(audioElement.currentTime||0);
 }
@@ -335,9 +331,10 @@ function renderTimelineMarkers(){
   t.innerHTML='';
   photos.forEach(p=>{
     if(totalAudioDuration){
-      const x=document.createElement('i');
-      x.className='absolute top-0 bottom-0 w-0.5 bg-violet-500 opacity-70';
+      const x=document.createElement('div');
+      x.className='absolute top-0 bottom-0 w-1 bg-violet-500 opacity-70 group';
       x.style.left=(p.startTime/totalAudioDuration*100)+'%';
+      x.title=formatTime(p.startTime);
       t.appendChild(x);
     }
   });
@@ -348,17 +345,40 @@ function generateVisualiserBars(){
   el.innerHTML=Array.from({length:45},()=>`<i class="flex-1 bg-indigo-500 rounded" style="height:${20+Math.random()*70}%"></i>`).join('');
 }
 
+function createBlurredBackground(img){
+  blurCtx.clearRect(0,0,blurCanvas.width,blurCanvas.height);
+  const ia=img.width/img.height,ca=blurCanvas.width/blurCanvas.height;
+  const bgW=ia>ca?blurCanvas.height*ia:blurCanvas.width;
+  const bgH=ia>ca?blurCanvas.height:blurCanvas.width/ia;
+  const x=(blurCanvas.width-bgW)/2;
+  const y=(blurCanvas.height-bgH)/2;
+  
+  blurCtx.drawImage(img,x,y,bgW,bgH);
+  blurCtx.filter='blur(40px)';
+  blurCtx.drawImage(blurCanvas,0,0);
+  
+  return blurCanvas.getImageData(0,0,blurCanvas.width,blurCanvas.height);
+}
+
 function renderCanvasFrame(time){
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(!photos.length)return;
+  
   let i=photos.findLastIndex?photos.findLastIndex(p=>p.startTime<=time):-1;
   if(i<0)for(let n=photos.length-1;n>=0;n--)if(photos[n].startTime<=time){i=n;break}
+  
   if(i>=0){
     const cp=photos[i],np=photos[i+1];
+    
+    if(cp.imgObj&&cp.imgObj.complete){
+      const blurred=createBlurredBackground(cp.imgObj);
+      ctx.putImageData(blurred,0,0);
+    }
+    
     let alpha=1;
     if(np){
       const gap=np.startTime-cp.startTime;
-      alpha=Math.max(0,1-(time-cp.startTime)/(gap*0.7));
+      alpha=Math.max(0,1-(time-cp.startTime)/(gap*0.5));
     }
     drawPhoto(cp,1,alpha);
     if(np&&alpha<1)drawPhoto(np,1,1-alpha);
@@ -370,7 +390,11 @@ function drawPhoto(p,scale,alpha){
   if(!img||!img.complete)return;
   ctx.save();
   ctx.globalAlpha=alpha;
-  const ia=img.width/img.height,ca=w/h,bgW=ia>ca?h*ia:w,bgH=ia>ca?h:w/ia,x=(w-bgW)/2,y=(h-bgH)/2;
+  const ia=img.width/img.height,ca=w/h;
+  const bgW=ia>ca?h*ia:w;
+  const bgH=ia>ca?h:w/ia;
+  const x=(w-bgW)/2;
+  const y=(h-bgH)/2;
   ctx.drawImage(img,x,y,bgW,bgH);
   ctx.restore();
 }
