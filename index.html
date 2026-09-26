@@ -27,14 +27,26 @@
 <script>
 'use strict';
 const $=id=>document.getElementById(id);
-const audioElement=$('audioPlayer'),canvas=$('videoCanvas'),ctx=canvas.getContext('2d');
-const blurCanvas=$('blurCanvas'),blurCtx=blurCanvas.getContext('2d');
 let audioTracks=[],photos=[],selectedPhotoId=null,totalAudioDuration=0,isPlaying=false,isMergingAudio=false,aspect='16:9',audioCtx=null;
 let draggedAudioIndex=-1;
+
+let canvas,ctx,blurCanvas,blurCtx;
+const audioElement=$('audioPlayer');
 
 const PHOTO_DURATION=3;const PHOTO_DURATION_MIN=2;const PHOTO_DURATION_MAX=5;
 
 const formatTime=s=>{s=Number(s)||0;return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')};
+
+function initCanvas(){
+  canvas=$('videoCanvas');
+  blurCanvas=$('blurCanvas');
+  if(canvas&&canvas.getContext){
+    ctx=canvas.getContext('2d');
+  }
+  if(blurCanvas&&blurCanvas.getContext){
+    blurCtx=blurCanvas.getContext('2d');
+  }
+}
 
 function setAspectRatio(r){
   aspect=r;
@@ -44,6 +56,7 @@ function setAspectRatio(r){
 }
 
 function updateCanvasDimensions(){
+  if(!canvas||!ctx||!blurCanvas||!blurCtx)return;
   const[w,h]=aspect.split(':').map(Number),max=960;
   canvas.width=w>h?max:Math.round(max*w/h);
   canvas.height=w>h?Math.round(max*h/w):max;
@@ -380,6 +393,7 @@ function updatePhotosUI(){
 
 function renderTimelineMarkers(){
   const t=$('timelineMarkersTrack');
+  if(!t)return;
   t.innerHTML='';
   photos.forEach(p=>{
     if(totalAudioDuration){
@@ -394,10 +408,12 @@ function renderTimelineMarkers(){
 
 function generateVisualiserBars(){
   const el=$('timelineVisualiser');
+  if(!el)return;
   el.innerHTML=Array.from({length:45},()=>`<i class="flex-1 bg-indigo-500 rounded" style="height:${20+Math.random()*70}%"></i>`).join('');
 }
 
 function createBlurredBackground(img){
+  if(!blurCtx||!blurCanvas)return null;
   blurCtx.clearRect(0,0,blurCanvas.width,blurCanvas.height);
   const ia=img.width/img.height,ca=blurCanvas.width/blurCanvas.height;
   const bgW=ia>ca?blurCanvas.height*ia:blurCanvas.width;
@@ -410,10 +426,11 @@ function createBlurredBackground(img){
   blurCtx.drawImage(blurCanvas,0,0);
   blurCtx.filter='none';
   
-  return blurCanvas.getImageData(0,0,blurCanvas.width,blurCanvas.height);
+  return blurCtx.getImageData(0,0,blurCanvas.width,blurCanvas.height);
 }
 
 function renderCanvasFrame(time){
+  if(!ctx||!canvas)return;
   ctx.clearRect(0,0,canvas.width,canvas.height);
   if(!photos.length){
     ctx.fillStyle='#0f172a';
@@ -438,7 +455,9 @@ function renderCanvasFrame(time){
     
     if(cp.imgObj&&cp.imgObj.complete){
       const blurred=createBlurredBackground(cp.imgObj);
-      ctx.putImageData(blurred,0,0);
+      if(blurred){
+        ctx.putImageData(blurred,0,0);
+      }
     }
     
     let alpha=1;
@@ -457,6 +476,7 @@ function renderCanvasFrame(time){
 }
 
 function drawPhoto(p,scale,alpha){
+  if(!ctx||!canvas)return;
   const w=canvas.width,h=canvas.height,img=p.imgObj;
   if(!img||!img.complete)return;
   ctx.save();
@@ -471,6 +491,7 @@ function drawPhoto(p,scale,alpha){
 }
 
 function drawPhotoZoom(p,alpha,progress){
+  if(!ctx||!canvas)return;
   const w=canvas.width,h=canvas.height,img=p.imgObj;
   if(!img||!img.complete)return;
   
@@ -494,7 +515,7 @@ function drawPhotoZoom(p,alpha,progress){
 
 async function startVideoGeneration(){
   if(!audioElement.src||!photos.length){alert('Unggah audio dan foto terlebih dahulu.');return}
-  if(!canvas.captureStream||!window.MediaRecorder){alert('Browser ini tidak mendukung export video.');return}
+  if(!canvas||!canvas.captureStream||!window.MediaRecorder){alert('Browser ini tidak mendukung export video.');return}
   
   $('exportModal').classList.remove('hidden');
   $('exportModal').classList.add('flex');
@@ -548,6 +569,6 @@ function closeExportModal(){
   $('exportModal').classList.remove('flex');
 }
 
-window.addEventListener('load',()=>{updateCanvasDimensions();updatePhotosUI();generateVisualiserBars()});
+window.addEventListener('load',()=>{initCanvas();updateCanvasDimensions();updatePhotosUI();generateVisualiserBars()});
 window.addEventListener('resize',updateCanvasDimensions);
 </script></body></html>
