@@ -56,36 +56,55 @@ async function handleMultiAudioUpload(e){
   const files=[...e.target.files];
   if(!files.length)return;
   
+  audioTracks=[];
   isMergingAudio=true;
   $('audioMergeStatus').classList.remove('hidden');
   $('audioMergeStatusText').textContent='Memuat audio...';
   
   try{
-    const promises=files.map((file,idx)=>
+    let loadedCount=0;
+    const decodePromises=files.map((file,idx)=>
       decodeAudioFile(file).then(buffer=>{
         audioTracks.push({name:file.name,buffer});
-        const progress=Math.round((idx+1)/files.length*100);
+        loadedCount++;
+        const progress=Math.round(loadedCount/files.length*100);
         $('audioMergeProgress').style.width=progress+'%';
-        $('audioMergeStatusText').textContent=`Memuat ${idx+1}/${files.length} file...`;
+        $('audioMergeStatusText').textContent=`Memuat ${loadedCount}/${files.length} file...`;
+        return buffer;
+      }).catch(err=>{
+        console.error('Error decoding '+file.name,err);
+        throw new Error(`Gagal membaca ${file.name}: ${err.message}`);
       })
     );
-    await Promise.all(promises);
+    
+    await Promise.all(decodePromises);
+    
+    if(!audioTracks.length)throw new Error('Tidak ada file audio yang berhasil dimuat');
+    
     $('audioMergeStatusText').textContent='Menggabungkan audio...';
     await mergeAudioTracks();
+    
     $('audioMergeStatus').classList.add('hidden');
     renderAudioUI();
   }catch(err){
     console.error('Audio error:',err);
-    alert('Error loading audio: '+err.message);
+    alert('Error: '+err.message);
+    audioTracks=[];
     isMergingAudio=false;
     $('audioMergeStatus').classList.add('hidden');
+    renderAudioUI();
   }
 }
 
 async function decodeAudioFile(file){
   if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   const arrayBuffer=await file.arrayBuffer();
-  return audioCtx.decodeAudioData(arrayBuffer);
+  try{
+    const audioBuffer=await audioCtx.decodeAudioData(arrayBuffer);
+    return audioBuffer;
+  }catch(e){
+    throw new Error('Format audio tidak didukung atau file rusak');
+  }
 }
 
 function guessAudioFormat(filename){const ext=filename.split('.').pop().toLowerCase();const formats={'mp3':'audio/mpeg','wav':'audio/wav','ogg':'audio/ogg','flac':'audio/flac','aac':'audio/aac','m4a':'audio/mp4'};return formats[ext]||'audio/mpeg'}
@@ -94,14 +113,21 @@ async function mergeAudioTracks(){
   if(!audioTracks.length)return;
   if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   
-  const rate=audioCtx.sampleRate,total=audioTracks.reduce((n,t)=>n+t.buffer.length,0),channels=audioTracks[0].buffer.numberOfChannels,merged=audioCtx.createBuffer(channels,total,rate);
+  const rate=audioCtx.sampleRate;
+  const channels=Math.max(...audioTracks.map(t=>t.buffer.numberOfChannels));
+  const total=audioTracks.reduce((n,t)=>n+t.buffer.length,0);
+  const merged=audioCtx.createBuffer(channels,total,rate);
   
   let offset=0;
-  for(let t of audioTracks){
+  for(let track of audioTracks){
+    const trackChannels=track.buffer.numberOfChannels;
+    const trackLength=track.buffer.length;
+    
     for(let c=0;c<channels;c++){
-      merged.getChannelData(c).set(t.buffer.getChannelData(c),offset);
+      const sourceData=c<trackChannels?track.buffer.getChannelData(c):new Float32Array(trackLength);
+      merged.getChannelData(c).set(sourceData,offset);
     }
-    offset+=t.buffer.length;
+    offset+=trackLength;
   }
   
   totalAudioDuration=total/rate;
@@ -114,20 +140,54 @@ async function mergeAudioTracks(){
   isMergingAudio=false;
 }
 
-function audioBufferToWav(b){
-  const ch=b.numberOfChannels,len=b.length*ch*2+44,buf=new ArrayBuffer(len),v=new DataView(buf),
-    write=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
-  write(0,'RIFF');v.setUint32(4,len-8,true);write(8,'WAVE');write(12,'fmt ');v.setUint32(16,16,true);
-  v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,44100,true);v.setUint32(28,44100*ch*2,true);
-  v.setUint16(32,ch*2,true);v.setUint16(34,16,true);write(36,'data');v.setUint32(40,b.length*ch*2,true);
+function audioBufferToWav(audioBuffer){
+  const rate=audioBuffer.sampleRate;
+  const channels=audioBuffer.numberOfChannels;
+  const length=audioBuffer.length;
+  const frameSize=channels*2;
+  const dataSize=length*frameSize;
+  const bufferSize=44+dataSize;
+  
+  const buffer=new ArrayBuffer(bufferSize);
+  const view=new DataView(buffer);
+  
+  const writeString=(offset,string)=>{
+    for(let i=0;i<string.length;i++){
+      view.setUint8(offset+i,string.charCodeAt(i));
+    }
+  };
+  
+  writeString(0,'RIFF');
+  view.setUint32(4,bufferSize-8,true);
+  writeString(8,'WAVE');
+  
+  writeString(12,'fmt ');
+  view.setUint32(16,16,true);
+  view.setUint16(20,1,true);
+  view.setUint16(22,channels,true);
+  view.setUint32(24,rate,true);
+  view.setUint32(28,rate*frameSize,true);
+  view.setUint16(32,frameSize,true);
+  view.setUint16(34,16,true);
+  
+  writeString(36,'data');
+  view.setUint32(40,dataSize,true);
+  
   let offset=44;
-  for(let i=0;i<b.length;i++){
-    for(let j=0;j<ch;j++){
-      const s=Math.max(-1,Math.min(1,b.getChannelData(j)[i]));
-      v.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);offset+=2;
+  const channelData=[];
+  for(let c=0;c<channels;c++){
+    channelData.push(audioBuffer.getChannelData(c));
+  }
+  
+  for(let i=0;i<length;i++){
+    for(let c=0;c<channels;c++){
+      const sample=Math.max(-1,Math.min(1,channelData[c][i]));
+      view.setInt16(offset,sample<0?sample*0x8000:sample*0x7fff,true);
+      offset+=2;
     }
   }
-  return buf;
+  
+  return buffer;
 }
 
 function renderAudioUI(){
