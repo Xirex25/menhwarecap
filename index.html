@@ -8,18 +8,18 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <style>body{font-family:Inter,sans-serif}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}input[type=range]{accent-color:#6366f1}.drag-over{background:#4f46e5!important}.audio-item.dragging{opacity:0.5}canvas{background:radial-gradient(circle,#1e293b,#0f172a)}</style>
+  <style>body{font-family:Inter,sans-serif}::-webkit-scrollbar{width:6px;height:6px}::-webkit-scrollbar-track{background:#0f172a}::-webkit-scrollbar-thumb{background:#334155;border-radius:4px}input[type="range"]{-webkit-appearance:none;width:100%;height:5px;border-radius:5px;background:#334155;outline:0}input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:50%;background:#6366f1;cursor:pointer}input[type="range"]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:#6366f1;cursor:pointer;border:none}.ratio:hover{background-color:#334155;color:#e2e8f0}.audio-item.dragging{opacity:0.5;background-color:#1e293b}.audio-item.drag-over{border-top:2px solid #6366f1}</style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
 <header class="border-b border-slate-800 bg-slate-900/90 px-4 sm:px-6 py-3 flex flex-wrap gap-3 items-center justify-between sticky top-0 z-40">
-  <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center"><i class="fa-solid fa-photo-film"></i></div><div><h1 class="font-bold text-lg">FotoVibe</h1><p class="text-xs text-slate-400">Foto + Musik</p></div></div>
-  <div class="flex items-center gap-3 flex-wrap"><div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700"><button id="ratio169" onclick="setAspectRatio('16:9')" class="ratio px-3 py-1.5 rounded-md text-xs font-semibold text-slate-100 bg-indigo-600">16:9</button><button id="ratio916" onclick="setAspectRatio('9:16')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">9:16</button><button id="ratio11" onclick="setAspectRatio('1:1')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">1:1</button></div><button onclick="$('audioMultiInput').click()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-music mr-2"></i>Musik</button><button onclick="$('photosInput').click()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-image mr-2"></i>Foto</button><button onclick="startVideoGeneration()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-download mr-2"></i>Export</button></div>
+  <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center"><i class="fa-solid fa-photo-film"></i></div><div><h1 class="text-lg font-bold text-white">FotoVibe Studio</h1><p class="text-xs text-slate-400">Buat video dari foto & musik</p></div></div>
+  <div class="flex items-center gap-3 flex-wrap"><div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700"><button id="ratio169" onclick="setAspectRatio('16:9')" class="ratio px-3 py-1.5 rounded-md text-xs font-semibold text-slate-100 bg-indigo-600">16:9</button><button id="ratio916" onclick="setAspectRatio('9:16')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">9:16</button><button id="ratio11" onclick="setAspectRatio('1:1')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">1:1</button></div><button onclick="document.getElementById('audioMultiInput').click()" class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-xs font-semibold flex items-center gap-1"><i class="fa-solid fa-music"></i>Audio</button><button onclick="document.getElementById('photosInput').click()" class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-xs font-semibold flex items-center gap-1"><i class="fa-solid fa-image"></i>Foto</button></div>
 </header>
 <main class="max-w-[1700px] mx-auto w-full p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
-<section class="lg:col-span-7 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div id="canvasWrapper" class="relative h-[min(55vw,440px)] min-h-[280px] bg-slate-950 rounded-xl overflow-hidden"><canvas id="videoCanvas" class="w-full h-full"></canvas><div id="emptyCanvasNotice" class="absolute inset-0 flex items-center justify-center text-slate-400"><div class="text-center"><i class="fa-solid fa-image text-4xl mb-3"></i><p>Belum ada foto</p></div></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between items-center pb-3 border-b border-slate-800"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-timeline mr-2 text-indigo-400"></i>Timeline</h2></div></div><div class="relative h-16 bg-slate-950 rounded-lg overflow-hidden"><div id="timelineVisualiser" class="absolute inset-0 flex items-end gap-0.5 p-2"></div><div id="timelineMarkersTrack" class="absolute inset-0"></div></div><div class="flex gap-2 mt-3"><input id="seekSlider" type="range" min="0" max="100" value="0" oninput="onSeekInput(this.value)" class="flex-1 h-2 rounded-lg bg-slate-800 appearance-none cursor-pointer"><button onclick="togglePlay()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg"><i id="playIcon" class="fa-solid fa-play"></i></button></div><div class="flex justify-between text-xs text-slate-400 mt-2"><span id="currentTimeDisplay">00:00</span><span id="durationTimeDisplay">00:00</span></div></div></section>
-<section class="lg:col-span-5 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-compact-disc mr-2 text-indigo-400"></i>Musik</h2><p id="audioCountBadge" class="text-xs text-slate-400">0 Lagu</p></div></div><div id="audioMergeStatus" class="hidden mb-3 p-3 bg-slate-800 rounded text-xs"><div class="flex gap-2 items-center"><i class="fa-solid fa-spinner animate-spin"></i><span id="audioMergeStatusText">Memproses...</span></div><div class="w-full bg-slate-700 rounded-full h-1 mt-2"><div id="audioMergeProgress" class="bg-indigo-500 h-1 rounded-full transition-all" style="width:0%"></div></div></div><div id="audioPlaylist" class="space-y-2 max-h-48 overflow-y-auto"></div><div class="mt-3 p-2 bg-slate-800 rounded text-xs"><div><span class="text-slate-400">Total durasi:</span> <span id="totalAudioDurationDisplay" class="font-semibold">00:00</span></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-images mr-2 text-violet-400"></i>Foto</h2><p id="photoCountBadge" class="text-xs text-slate-400">0 Foto</p></div></div><div id="photosList" class="space-y-2 max-h-48 overflow-y-auto"></div><div class="mt-3"><button onclick="addPhotoAtCurrentTime()" class="w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sm rounded-lg"><i class="fa-solid fa-plus mr-2"></i>Tambah di waktu ini</button></div></div></section>
+<section class="lg:col-span-7 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div id="canvasWrapper" class="relative h-[min(55vw,440px)] min-h-[280px] bg-slate-950 rounded-xl overflow-hidden"><canvas id="videoCanvas" class="w-full h-full block"></canvas><div id="emptyCanvasNotice" style="display:flex" class="absolute inset-0 flex-col items-center justify-center gap-3 bg-slate-950/50"><i class="fa-solid fa-image text-3xl text-slate-600"></i><p class="text-sm text-slate-400">Unggah foto untuk memulai</p></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div class="space-y-3"><div class="flex justify-between items-center text-sm"><span>Timeline</span><span id="currentTimeDisplay" class="font-mono text-indigo-400">00:00</span></div><div id="timelineMarkersTrack" class="relative h-12 bg-slate-800 rounded-lg overflow-hidden p-2"><div id="timelineVisualiser" class="flex items-end gap-1 h-full opacity-40"></div></div><div class="flex items-center gap-2"><input type="range" id="seekSlider" onchange="onSeekInput(this.value)" oninput="onSeekInput(this.value)" value="0" class="flex-1"><span id="durationTimeDisplay" class="font-mono text-sm text-slate-400 min-w-[40px]">00:00</span></div><div class="flex gap-2"><button onclick="togglePlay()" class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-semibold flex items-center justify-center gap-2"><i id="playIcon" class="fa-solid fa-play"></i>Putar</button><button onclick="stopPlayback()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg"><i class="fa-solid fa-stop"></i></button></div></div></div></section>
+<section class="lg:col-span-5 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold">Audio <span id="audioCountBadge" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-emerald-600/20 text-emerald-300">0 Lagu</span></h2><p class="text-xs text-slate-400">Durasi: <span id="totalAudioDurationDisplay" class="font-mono">00:00</span></p></div><button onclick="document.getElementById('audioMultiInput').click()" class="text-emerald-400 hover:text-emerald-300"><i class="fa-solid fa-plus"></i></button></div><div id="audioMergeStatus" class="hidden mt-3 p-3 bg-slate-800 rounded"><p id="audioMergeStatusText" class="text-xs text-slate-400 mb-2">Memproses...</p><div class="w-full h-2 bg-slate-700 rounded-full overflow-hidden"><div id="audioMergeProgress" style="width:0%" class="h-full bg-emerald-500 transition-all"></div></div></div><div id="audioPlaylist" class="mt-3 space-y-1 max-h-40 overflow-y-auto"></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold">Foto <span id="photoCountBadge" class="ml-1 px-2 py-0.5 text-xs rounded-full bg-blue-600/20 text-blue-300">0 Foto</span></h2><p class="text-xs text-slate-400">Durasi per foto: <strong>2-5 detik</strong></p></div><button onclick="document.getElementById('photosInput').click()" class="text-blue-400 hover:text-blue-300"><i class="fa-solid fa-plus"></i></button></div><div id="photosList" class="mt-3 space-y-2 max-h-64 overflow-y-auto"></div></div><button onclick="startVideoGeneration()" class="w-full mt-4 px-4 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 rounded-lg font-bold flex items-center justify-center gap-2"><i class="fa-solid fa-download"></i>Export Video</button></section>
 </main>
-<div id="exportModal" class="fixed inset-0 hidden items-center justify-center bg-black/80 z-50 p-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h3 class="font-semibold">Export Video</h3><button onclick="closeExportModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button></div><div id="exportStatus" class="text-sm text-slate-300"><div class="flex gap-2 items-center"><i class="fa-solid fa-spinner animate-spin"></i>Mengekspor video...</div><div class="w-full bg-slate-700 rounded-full h-2 mt-3"><div id="exportProgress" class="bg-emerald-500 h-2 rounded-full" style="width:0%"></div></div><p id="exportStatusText" class="mt-2 text-xs text-slate-400">Persiapan...</p></div></div></div>
+<div id="exportModal" class="fixed inset-0 hidden items-center justify-center bg-black/80 z-50 p-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h3 class="font-bold text-lg">Mengekspor Video</h3><button onclick="closeExportModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-times"></i></button></div><div class="space-y-3"><p id="exportStatusText" class="text-center font-mono text-2xl font-bold text-indigo-400">0%</p><div class="w-full h-3 bg-slate-800 rounded-full overflow-hidden"><div id="exportProgress" style="width:0%" class="h-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all"></div></div><p class="text-xs text-slate-400 text-center">Jangan tutup tab ini...</p></div></div></div>
 <input type="file" id="audioMultiInput" accept="audio/*" multiple class="hidden">
 <input type="file" id="photosInput" accept="image/*" multiple class="hidden">
 <canvas id="blurCanvas" class="hidden"></canvas>
@@ -31,6 +31,8 @@ const audioElement=$('audioPlayer'),canvas=$('videoCanvas'),ctx=canvas.getContex
 const blurCanvas=$('blurCanvas'),blurCtx=blurCanvas.getContext('2d');
 let audioTracks=[],photos=[],selectedPhotoId=null,totalAudioDuration=0,isPlaying=false,isMergingAudio=false,aspect='16:9',audioCtx=null;
 let draggedAudioIndex=-1;
+
+const PHOTO_DURATION=3;const PHOTO_DURATION_MIN=2;const PHOTO_DURATION_MAX=5;
 
 const formatTime=s=>{s=Number(s)||0;return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')};
 
@@ -255,7 +257,7 @@ function audioBufferToWav(audioBuffer){
 function renderAudioUI(){
   $('audioCountBadge').textContent=audioTracks.length+' Lagu';
   $('totalAudioDurationDisplay').textContent=formatTime(totalAudioDuration);
-  $('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="audio-item flex justify-between items-center p-2 bg-slate-800 rounded text-sm cursor-move hover:bg-slate-700 transition" draggable="true" ondragstart="dragStart(${i})" ondragover="dragOver(event)" ondrop="dropAudio(${i})" ondragend="dragEnd()"><div class="flex items-center gap-2 flex-1"><i class="fa-solid fa-grip-vertical text-slate-500"></i><span class="truncate">${escapeHtml(t.name)}</span><span class="text-xs text-slate-400 ml-auto">${formatTime(t.duration||0)}</span></div><button onclick="removeAudio(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+  $('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="audio-item flex justify-between items-center p-2 bg-slate-800 rounded text-sm cursor-move hover:bg-slate-700 transition" draggable="true" ondragstart="dragStart(${i})" ondragover="dragOver(event)" ondrop="dropAudio(${i})" ondragend="dragEnd()"><span class="truncate flex-1">${escapeHtml(t.name)}</span><div class="flex items-center gap-1 flex-shrink-0"><span class="text-xs text-slate-400">${formatTime(t.duration)}</span><button onclick="removeAudio(${i})" class="text-red-400 hover:text-red-300 ml-1"><i class="fa-solid fa-trash"></i></button></div></div>`).join('');
   renderTimelineMarkers();
 }
 
@@ -291,7 +293,7 @@ async function handlePhotosUpload(e){
 
 function autoDistributePhotos(){
   if(!photos.length){updatePhotosUI();return}
-  const interval=(totalAudioDuration||30)/photos.length;
+  const interval=PHOTO_DURATION;
   photos.forEach((p,i)=>p.startTime=Number((i*interval).toFixed(1)));
   updatePhotosUI();
 }
@@ -321,7 +323,7 @@ function addPhotoAtCurrentTime(){
 function updatePhotosUI(){
   $('photoCountBadge').textContent=photos.length+' Foto';
   $('emptyCanvasNotice').style.display=photos.length?'none':'flex';
-  $('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div class="p-2 bg-slate-800 rounded"><div class="flex gap-2 mb-2"><div class="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0"><img src="${p.url}" class="w-full h-full object-cover"></div><div class="flex-1"><div class="text-xs text-slate-400 font-semibold">⏱️ ${formatTime(p.startTime)}</div><input type="number" value="${p.startTime}" min="0" step="0.1" onchange="updatePhotoTime(${p.id},this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100"></div><button onclick="deletePhoto(${p.id})" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<p class="text-slate-400 text-sm">Tidak ada foto</p>';
+  $('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div class="p-2 bg-slate-800 rounded"><div class="flex gap-2 mb-2"><div class="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0"><img src="${p.url}" class="w-full h-full object-cover"></div><div class="flex-1 min-w-0"><p class="text-xs font-semibold truncate">Foto ${i+1}</p><input type="number" value="${p.startTime}" min="0" max="${totalAudioDuration}" onchange="updatePhotoTime(${p.id},this.value)" class="w-full px-1 py-0.5 text-xs bg-slate-700 rounded text-slate-100 border border-slate-600"></div><button onclick="deletePhoto(${p.id})" class="text-red-400 hover:text-red-300 flex-shrink-0"><i class="fa-solid fa-trash-alt"></i></button></div></div>`).join(''):' ';
   renderTimelineMarkers();
   renderCanvasFrame(audioElement.currentTime||0);
 }
@@ -354,8 +356,9 @@ function createBlurredBackground(img){
   const y=(blurCanvas.height-bgH)/2;
   
   blurCtx.drawImage(img,x,y,bgW,bgH);
-  blurCtx.filter='blur(40px)';
+  blurCtx.filter='blur(35px)';
   blurCtx.drawImage(blurCanvas,0,0);
+  blurCtx.filter='none';
   
   return blurCanvas.getImageData(0,0,blurCanvas.width,blurCanvas.height);
 }
@@ -369,6 +372,9 @@ function renderCanvasFrame(time){
   
   if(i>=0){
     const cp=photos[i],np=photos[i+1];
+    const photoDuration=np?np.startTime-cp.startTime:PHOTO_DURATION;
+    const timeInPhoto=time-cp.startTime;
+    const progress=Math.min(1,timeInPhoto/photoDuration);
     
     if(cp.imgObj&&cp.imgObj.complete){
       const blurred=createBlurredBackground(cp.imgObj);
@@ -376,12 +382,17 @@ function renderCanvasFrame(time){
     }
     
     let alpha=1;
-    if(np){
-      const gap=np.startTime-cp.startTime;
-      alpha=Math.max(0,1-(time-cp.startTime)/(gap*0.5));
+    const fadeOutStart=0.7;
+    if(progress>fadeOutStart){
+      alpha=Math.max(0,1-(progress-fadeOutStart)/(1-fadeOutStart));
     }
-    drawPhoto(cp,1,alpha);
-    if(np&&alpha<1)drawPhoto(np,1,1-alpha);
+    drawPhotoZoom(cp,alpha,progress);
+    
+    if(np&&alpha<1){
+      const fadeInStart=0;
+      const npAlpha=Math.max(0,Math.min(1,(progress-fadeInStart)*2));
+      drawPhotoZoom(np,npAlpha,0);
+    }
   }
 }
 
@@ -391,11 +402,33 @@ function drawPhoto(p,scale,alpha){
   ctx.save();
   ctx.globalAlpha=alpha;
   const ia=img.width/img.height,ca=w/h;
-  const bgW=ia>ca?h*ia:w;
-  const bgH=ia>ca?h:w/ia;
-  const x=(w-bgW)/2;
-  const y=(h-bgH)/2;
-  ctx.drawImage(img,x,y,bgW,bgH);
+  const photoW=ia>ca?h*ia:w;
+  const photoH=ia>ca?h:w/ia;
+  const photoX=(w-photoW)/2;
+  const photoY=(h-photoH)/2;
+  ctx.drawImage(img,photoX,photoY,photoW,photoH);
+  ctx.restore();
+}
+
+function drawPhotoZoom(p,alpha,progress){
+  const w=canvas.width,h=canvas.height,img=p.imgObj;
+  if(!img||!img.complete)return;
+  
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  
+  const ia=img.width/img.height,ca=w/h;
+  let photoW=ia>ca?h*ia:w;
+  let photoH=ia>ca?h:w/ia;
+  
+  const scale=1+progress*0.15;
+  photoW*=scale;
+  photoH*=scale;
+  
+  const photoX=(w-photoW)/2;
+  const photoY=(h-photoH)/2;
+  
+  ctx.drawImage(img,photoX,photoY,photoW,photoH);
   ctx.restore();
 }
 
