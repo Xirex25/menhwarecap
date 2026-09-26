@@ -12,47 +12,273 @@
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
 <header class="border-b border-slate-800 bg-slate-900/90 px-4 sm:px-6 py-3 flex flex-wrap gap-3 items-center justify-between sticky top-0 z-40">
-  <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center"><i class="fa-solid fa-photo-film"></i></div><div><h1 class="font-bold text-lg">FotoVibe Studio</h1><p class="text-xs text-slate-400">Pembuat Video Foto & Multi-Audio</p></div></div>
-  <div class="flex items-center gap-3 flex-wrap"><div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700"><button id="ratio169" onclick="setAspectRatio('16:9')" class="ratio px-3 py-1.5 rounded-md text-xs bg-indigo-600">16:9</button><button id="ratio916" onclick="setAspectRatio('9:16')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">9:16</button><button id="ratio11" onclick="setAspectRatio('1:1')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">1:1</button></div><button onclick="startVideoGeneration()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-medium"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>Generate Video</button></div>
+  <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center"><i class="fa-solid fa-photo-film"></i></div><div><h1 class="font-bold text-lg">FotoVibe</h1><p class="text-xs text-slate-400">Foto + Musik</p></div></div>
+  <div class="flex items-center gap-3 flex-wrap"><div class="flex bg-slate-800 p-1 rounded-lg border border-slate-700"><button id="ratio169" onclick="setAspectRatio('16:9')" class="ratio px-3 py-1.5 rounded-md text-xs font-semibold text-slate-100 bg-indigo-600">16:9</button><button id="ratio916" onclick="setAspectRatio('9:16')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">9:16</button><button id="ratio11" onclick="setAspectRatio('1:1')" class="ratio px-3 py-1.5 rounded-md text-xs text-slate-400">1:1</button></div><button onclick="$('audioMultiInput').click()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-music mr-2"></i>Musik</button><button onclick="$('photosInput').click()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-image mr-2"></i>Foto</button><button onclick="startVideoGeneration()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-semibold"><i class="fa-solid fa-download mr-2"></i>Export</button></div>
 </header>
 <main class="max-w-[1700px] mx-auto w-full p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
-<section class="lg:col-span-7 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div id="canvasWrapper" class="relative h-[min(55vw,440px)] min-h-[280px] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center"><canvas id="videoCanvas" class="max-w-full max-h-full"></canvas><div id="emptyCanvasNotice" class="absolute inset-0 flex flex-col items-center justify-center text-center text-slate-500"><i class="fa-solid fa-clapperboard text-4xl mb-3"></i><p class="font-medium text-slate-300">Pratinjau Studio Video</p><p class="text-xs mt-1">Unggah audio dan foto untuk memulai.</p></div></div><div class="mt-4 space-y-3"><div class="flex items-center gap-3"><span id="currentTimeDisplay" class="text-xs font-mono text-indigo-400">00:00</span><input id="seekSlider" type="range" min="0" max="0" value="0" step="0.1" oninput="onSeekInput(this.value)" class="flex-1"><span id="durationTimeDisplay" class="text-xs font-mono text-slate-400">00:00</span></div><div class="flex flex-wrap items-center justify-between gap-3"><div class="flex gap-2"><button onclick="togglePlay()" class="w-10 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500"><i id="playIcon" class="fa-solid fa-play"></i></button><button onclick="stopPlayback()" class="w-10 h-10 rounded-xl bg-slate-800"><i class="fa-solid fa-stop"></i></button></div><div class="flex gap-4 text-xs"><label><input id="kenBurnsToggle" type="checkbox" checked> Ken Burns</label><label><input id="transitionToggle" type="checkbox" checked> Crossfade</label></div></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div class="flex justify-between text-xs mb-2"><b><i class="fa-solid fa-sliders text-indigo-400 mr-1"></i>Marker Timeline</b><span id="audioMergeStatusText" class="text-indigo-300">Siap</span></div><div class="relative h-8 bg-slate-950 rounded-lg p-1"><div id="timelineVisualiser" class="h-full flex items-center gap-1 opacity-60"></div><div id="timelineMarkersTrack" class="absolute inset-0 pointer-events-none"></div></div></div></section>
-<section class="lg:col-span-5 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-music text-indigo-400 mr-2"></i>Playlist Multi-Audio</h2><p class="text-xs text-slate-400">Upload MP3, WAV, OGG, FLAC & format lainnya.</p></div><span id="audioCountBadge" class="text-xs text-indigo-300">0 Lagu</span></div><label class="block my-3 cursor-pointer"><div class="w-full py-3 px-4 rounded-xl border border-dashed border-indigo-500/50 text-indigo-300 text-sm"><i class="fa-solid fa-cloud-arrow-up mr-2"></i>Upload File Audio</div><input id="audioMultiInput" type="file" accept="audio/*" multiple class="hidden"></label><div id="audioPlaylist" class="space-y-2 max-h-44 overflow-y-auto"></div><div class="mt-3 pt-3 border-t border-slate-800 flex justify-between text-xs"><span class="text-slate-400">Total Durasi:</span><b id="totalAudioDurationDisplay" class="text-indigo-400">00:00</b></div></div>
-<div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-images text-indigo-400 mr-2"></i>Foto & Timeline</h2><p class="text-xs text-slate-400">Atur waktu tampil setiap foto.</p></div><span id="photoCountBadge" class="text-xs text-indigo-300">0 Foto</span></div><div class="grid grid-cols-2 gap-2 my-3"><label class="cursor-pointer"><div class="text-center py-2 rounded-xl bg-indigo-600 text-xs">+ Upload Foto</div><input id="photosInput" type="file" accept="image/*" multiple class="hidden"></label><button onclick="autoDistributePhotos()" class="py-2 rounded-xl bg-slate-800 text-xs">Ratakan Marker</button></div><button onclick="addPhotoAtCurrentTime()" class="w-full py-2 mb-3 rounded-xl bg-slate-800 text-indigo-300 text-xs">Kunci Detik Saat Ini untuk Foto Terpilih</button><div id="photosList" class="space-y-2 max-h-80 overflow-y-auto"></div></div></section>
+<section class="lg:col-span-7 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-4"><div id="canvasWrapper" class="relative h-[min(55vw,440px)] min-h-[280px] bg-slate-950 rounded-xl overflow-hidden"><canvas id="videoCanvas" class="w-full h-full"></canvas><div id="emptyCanvasNotice" class="absolute inset-0 flex items-center justify-center text-slate-400"><div class="text-center"><i class="fa-solid fa-image text-4xl mb-3"></i><p>Belum ada foto</p></div></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between items-center pb-3 border-b border-slate-800"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-timeline mr-2 text-indigo-400"></i>Timeline</h2></div></div><div class="relative h-16 bg-slate-950 rounded-lg overflow-hidden"><div id="timelineVisualiser" class="absolute inset-0 flex items-end gap-0.5 p-2"></div><div id="timelineMarkersTrack" class="absolute inset-0"></div></div><div class="flex gap-2 mt-3"><input id="seekSlider" type="range" min="0" max="100" value="0" oninput="onSeekInput(this.value)" class="flex-1 h-2 rounded-lg bg-slate-800 appearance-none cursor-pointer"><button onclick="togglePlay()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg"><i id="playIcon" class="fa-solid fa-play"></i></button></div><div class="flex justify-between text-xs text-slate-400 mt-2"><span id="currentTimeDisplay">00:00</span><span id="durationTimeDisplay">00:00</span></div></div></section>
+<section class="lg:col-span-5 space-y-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-compact-disc mr-2 text-indigo-400"></i>Musik</h2><p id="audioCountBadge" class="text-xs text-slate-400">0 Lagu</p></div></div><div id="audioMergeStatus" class="hidden mb-3 p-2 bg-slate-800 rounded text-xs"><div class="flex gap-2 items-center"><i class="fa-solid fa-spinner animate-spin"></i><span id="audioMergeStatusText">Memproses...</span></div><div class="w-full bg-slate-700 rounded-full h-1 mt-1"><div id="audioMergeProgress" class="bg-indigo-500 h-1 rounded-full" style="width:0%"></div></div></div><div id="audioPlaylist" class="space-y-2 max-h-48 overflow-y-auto"></div><div class="mt-3 p-2 bg-slate-800 rounded text-xs"><div><span class="text-slate-400">Total durasi:</span> <span id="totalAudioDurationDisplay" class="font-semibold">00:00</span></div></div></div><div class="bg-slate-900 border border-slate-800 rounded-2xl p-5"><div class="flex justify-between border-b border-slate-800 pb-3"><div><h2 class="font-semibold text-sm"><i class="fa-solid fa-images mr-2 text-violet-400"></i>Foto</h2><p id="photoCountBadge" class="text-xs text-slate-400">0 Foto</p></div></div><div id="photosList" class="space-y-2 max-h-48 overflow-y-auto"></div><div class="mt-3"><button onclick="addPhotoAtCurrentTime()" class="w-full px-3 py-2 bg-slate-800 hover:bg-slate-700 text-sm rounded-lg"><i class="fa-solid fa-plus mr-2"></i>Tambah di waktu ini</button></div></div></section>
 </main>
-<div id="exportModal" class="fixed inset-0 hidden items-center justify-center bg-black/80 z-50 p-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full"><div class="flex justify-between mb-4"><b>Proses Render Video</b><button id="closeModalBtn" onclick="closeExportModal()" class="hidden">✕</button></div><div id="processingState"><p class="text-sm mb-3">Merekam canvas dan audio...</p><div class="h-2 bg-slate-800 rounded"><div id="exportProgressBar" class="h-full bg-indigo-500 rounded w-0"></div></div><div class="flex justify-between text-xs mt-1"><span id="exportProgressPercent">0%</span><span id="exportProgressTime">00:00 / 00:00</span></div></div><div id="successState" class="hidden space-y-3"><video id="renderedVideoPreview" controls class="w-full rounded"></video><a id="downloadVideoBtn" download="fotovibe-video.webm" class="block text-center py-3 rounded-xl bg-emerald-600">Download Video (.webm)</a></div></div></div>
+<div id="exportModal" class="fixed inset-0 hidden items-center justify-center bg-black/80 z-50 p-4"><div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-md w-full"><div class="flex justify-between items-center mb-4"><h3 class="font-semibold">Export Video</h3><button onclick="closeExportModal()" class="text-slate-400"><i class="fa-solid fa-xmark"></i></button></div><div id="exportStatus" class="text-sm text-slate-300"><div class="flex gap-2 items-center"><i class="fa-solid fa-spinner animate-spin"></i>Mengekspor video...</div><div class="w-full bg-slate-700 rounded-full h-2 mt-3"><div id="exportProgress" class="bg-emerald-500 h-2 rounded-full" style="width:0%"></div></div><p id="exportStatusText" class="mt-2 text-xs text-slate-400">Persiapan...</p></div></div></div>
+<input type="file" id="audioMultiInput" accept="audio/*" multiple class="hidden">
+<input type="file" id="photosInput" accept="image/*" multiple class="hidden">
 <audio id="audioPlayer" class="hidden"></audio>
 <script>
 'use strict';
-const $=id=>document.getElementById(id);const audioElement=$('audioPlayer'),canvas=$('videoCanvas'),ctx=canvas.getContext('2d');
+const $=id=>document.getElementById(id);
+const audioElement=$('audioPlayer'),canvas=$('videoCanvas'),ctx=canvas.getContext('2d');
 let audioTracks=[],photos=[],selectedPhotoId=null,totalAudioDuration=0,isPlaying=false,isMergingAudio=false,aspect='16:9',audioCtx=null,mediaSourceNode=null,transitionDuration=0.7,renderTimer=null;
+
 const formatTime=s=>{s=Number(s)||0;return String(Math.floor(s/60)).padStart(2,'0')+':'+String(Math.floor(s%60)).padStart(2,'0')};
-function setAspectRatio(r){aspect=r;document.querySelectorAll('.ratio').forEach(b=>b.className='ratio px-3 py-1.5 rounded-md text-xs text-slate-400');$('ratio'+({'16:9':'169','9:16':'916','1:1':'11'}[r])).className='ratio px-3 py-1.5 rounded-md text-xs bg-indigo-600';updateCanvasDimensions()}
+
+function setAspectRatio(r){aspect=r;document.querySelectorAll('.ratio').forEach(b=>b.className='ratio px-3 py-1.5 rounded-md text-xs text-slate-400');$('ratio'+({'16:9':'169','9:16':'916','1:1':'11'}[r])).className='ratio px-3 py-1.5 rounded-md text-xs font-semibold text-slate-100 bg-indigo-600';updateCanvasDimensions()}
+
 function updateCanvasDimensions(){const[w,h]=aspect.split(':').map(Number),max=960;canvas.width=w>h?max:Math.round(max*w/h);canvas.height=w>h?Math.round(max*h/w):max;renderCanvasFrame(audioElement.currentTime||0)}
-function updatePlaybackUI(){const t=audioElement.currentTime||0;$('currentTimeDisplay').textContent=formatTime(t);$('durationTimeDisplay').textContent=formatTime(totalAudioDuration);$('seekSlider').max=totalAudioDuration||0;$('seekSlider').value=t}
+
+function updatePlaybackUI(){const t=audioElement.currentTime||0;$('currentTimeDisplay').textContent=formatTime(t);$('durationTimeDisplay').textContent=formatTime(totalAudioDuration);$('seekSlider').max=totalAudioDuration||100;$('seekSlider').value=t}
+
 function togglePlay(){if(!audioElement.src||isMergingAudio)return;audioElement.paused?audioElement.play().catch(console.warn):audioElement.pause()}
+
 function stopPlayback(){audioElement.pause();audioElement.currentTime=0;renderCanvasFrame(0);updatePlaybackUI()}
-audioElement.onplay=()=>{isPlaying=true;$('playIcon').className='fa-solid fa-pause';requestAnimationFrame(playbackLoop)};audioElement.onpause=()=>{isPlaying=false;$('playIcon').className='fa-solid fa-play'};audioElement.ontimeupdate=updatePlaybackUI;audioElement.onended=()=>{isPlaying=false;updatePlaybackUI()};
-function onSeekInput(v){audioElement.currentTime=Number(v);renderCanvasFrame(Number(v))};function playbackLoop(){if(isPlaying){renderCanvasFrame(audioElement.currentTime);requestAnimationFrame(playbackLoop)}}
-$('audioMultiInput').onchange=e=>handleMultiAudioUpload(e);$('photosInput').onchange=e=>handlePhotosUpload(e);
-async function handleMultiAudioUpload(e){const files=[...e.target.files];if(!files.length)return;isMergingAudio=true;$('audioMergeStatusText').textContent='Memuat audio...';try{for(const file of files){const arrayBuffer=await file.arrayBuffer(),a=new Audio();a.onloadedmetadata=null;if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();let audioBuffer;try{audioBuffer=await audioCtx.decodeAudioData(arrayBuffer.slice(0))}catch(err){console.warn('Dekode gagal, coba dengan URL:',err);const url=URL.createObjectURL(file),audio=new Audio(url);await new Promise((res,rej)=>{audio.onloadedmetadata=()=>{a.duration=audio.duration;res()};audio.onerror=rej});audioBuffer=null}audioTracks.push({file,title:file.name,arrayBuffer:arrayBuffer,duration:audioBuffer?audioBuffer.duration:a.duration,format:file.type||guessAudioFormat(file.name)})}}catch(err){alert('Gagal membaca audio '+err.message)}isMergingAudio=false;if(audioTracks.length)await mergeAudioTracks();renderAudioUI();e.target.value='';$('audioMergeStatusText').textContent='Siap'}
-function guessAudioFormat(filename){const ext=filename.split('.').pop().toLowerCase();const formats={'mp3':'audio/mpeg','wav':'audio/wav','ogg':'audio/ogg','flac':'audio/flac','aac':'audio/aac','m4a':'audio/mp4','wma':'audio/x-ms-wma'};return formats[ext]||'audio/mpeg'}
-async function mergeAudioTracks(){if(!audioTracks.length)return;if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const rate=44100,total=Math.ceil(audioTracks.reduce((n,t)=>n+t.duration,0)*rate);const off=new OfflineAudioContext(2,total,rate);let at=0;for(const t of audioTracks){let audioBuffer;try{audioBuffer=await audioCtx.decodeAudioData(t.arrayBuffer.slice(0))}catch(e){console.warn('Gagal decode '+t.title+', skip:',e);continue}const src=off.createBufferSource();src.buffer=audioBuffer;src.connect(off.destination);src.start(at);at+=audioBuffer.duration}const rendered=await off.startRendering();const blob=new Blob([audioBufferToWav(rendered)],{type:'audio/wav'});if(audioElement.src)URL.revokeObjectURL(audioElement.src);audioElement.src=URL.createObjectURL(blob);totalAudioDuration=rendered.duration;updatePlaybackUI();autoDistributePhotos();generateVisualiserBars()}
-function audioBufferToWav(b){const ch=b.numberOfChannels,len=b.length*ch*2+44,buf=new ArrayBuffer(len),v=new DataView(buf),write=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));write(0,'RIFF');v.setUint32(4,len-8,true);write(8,'WAVE');write(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,b.sampleRate,true);v.setUint32(28,b.sampleRate*ch*2,true);v.setUint16(32,ch*2,true);v.setUint16(34,16,true);write(36,'data');v.setUint32(40,len-44,true);let o=44;for(let i=0;i<b.length;i++)for(let c=0;c<ch;c++){let x=Math.max(-1,Math.min(1,b.getChannelData(c)[i]));v.setInt16(o,x<0?x*32768:x*32767,true);o+=2}return buf}
-function renderAudioUI(){$('audioCountBadge').textContent=audioTracks.length+' Lagu';$('totalAudioDurationDisplay').textContent=formatTime(totalAudioDuration);$('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="p-2 bg-slate-950 rounded-lg flex justify-between text-xs"><span class="truncate">${i+1}. ${escapeHtml(t.title)}</span><button onclick="removeAudio(${i})" class="text-red-400 ml-2">✕</button></div>`).join('')}
-function removeAudio(i){audioTracks.splice(i,1);if(audioTracks.length)mergeAudioTracks().then(renderAudioUI);else{audioElement.removeAttribute('src');totalAudioDuration=0;renderAudioUI();updatePlaybackUI()}}
+
+audioElement.onplay=()=>{isPlaying=true;$('playIcon').className='fa-solid fa-pause';requestAnimationFrame(playbackLoop)};
+audioElement.onpause=()=>{isPlaying=false;$('playIcon').className='fa-solid fa-play'};
+audioElement.ontimeupdate=updatePlaybackUI;
+
+function onSeekInput(v){audioElement.currentTime=Number(v);renderCanvasFrame(Number(v))};
+
+function playbackLoop(){if(isPlaying){renderCanvasFrame(audioElement.currentTime);requestAnimationFrame(playbackLoop)}}
+
+$('audioMultiInput').onchange=e=>handleMultiAudioUpload(e);
+$('photosInput').onchange=e=>handlePhotosUpload(e);
+
+async function handleMultiAudioUpload(e){
+  const files=[...e.target.files];
+  if(!files.length)return;
+  
+  isMergingAudio=true;
+  $('audioMergeStatus').classList.remove('hidden');
+  $('audioMergeStatusText').textContent='Memuat audio...';
+  
+  try{
+    const promises=files.map((file,idx)=>
+      decodeAudioFile(file).then(buffer=>{
+        audioTracks.push({name:file.name,buffer});
+        const progress=Math.round((idx+1)/files.length*100);
+        $('audioMergeProgress').style.width=progress+'%';
+        $('audioMergeStatusText').textContent=`Memuat ${idx+1}/${files.length} file...`;
+      })
+    );
+    await Promise.all(promises);
+    $('audioMergeStatusText').textContent='Menggabungkan audio...';
+    await mergeAudioTracks();
+    $('audioMergeStatus').classList.add('hidden');
+    renderAudioUI();
+  }catch(err){
+    console.error('Audio error:',err);
+    alert('Error loading audio: '+err.message);
+    isMergingAudio=false;
+    $('audioMergeStatus').classList.add('hidden');
+  }
+}
+
+async function decodeAudioFile(file){
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  const arrayBuffer=await file.arrayBuffer();
+  return audioCtx.decodeAudioData(arrayBuffer);
+}
+
+function guessAudioFormat(filename){const ext=filename.split('.').pop().toLowerCase();const formats={'mp3':'audio/mpeg','wav':'audio/wav','ogg':'audio/ogg','flac':'audio/flac','aac':'audio/aac','m4a':'audio/mp4'};return formats[ext]||'audio/mpeg'}
+
+async function mergeAudioTracks(){
+  if(!audioTracks.length)return;
+  if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  
+  const rate=audioCtx.sampleRate,total=audioTracks.reduce((n,t)=>n+t.buffer.length,0),channels=audioTracks[0].buffer.numberOfChannels,merged=audioCtx.createBuffer(channels,total,rate);
+  
+  let offset=0;
+  for(let t of audioTracks){
+    for(let c=0;c<channels;c++){
+      merged.getChannelData(c).set(t.buffer.getChannelData(c),offset);
+    }
+    offset+=t.buffer.length;
+  }
+  
+  totalAudioDuration=total/rate;
+  autoDistributePhotos();
+  
+  const wavData=audioBufferToWav(merged);
+  const blob=new Blob([wavData],{type:'audio/wav'});
+  audioElement.src=URL.createObjectURL(blob);
+  updatePlaybackUI();
+  isMergingAudio=false;
+}
+
+function audioBufferToWav(b){
+  const ch=b.numberOfChannels,len=b.length*ch*2+44,buf=new ArrayBuffer(len),v=new DataView(buf),
+    write=(o,s)=>[...s].forEach((c,i)=>v.setUint8(o+i,c.charCodeAt(0)));
+  write(0,'RIFF');v.setUint32(4,len-8,true);write(8,'WAVE');write(12,'fmt ');v.setUint32(16,16,true);
+  v.setUint16(20,1,true);v.setUint16(22,ch,true);v.setUint32(24,44100,true);v.setUint32(28,44100*ch*2,true);
+  v.setUint16(32,ch*2,true);v.setUint16(34,16,true);write(36,'data');v.setUint32(40,b.length*ch*2,true);
+  let offset=44;
+  for(let i=0;i<b.length;i++){
+    for(let j=0;j<ch;j++){
+      const s=Math.max(-1,Math.min(1,b.getChannelData(j)[i]));
+      v.setInt16(offset,s<0?s*0x8000:s*0x7fff,true);offset+=2;
+    }
+  }
+  return buf;
+}
+
+function renderAudioUI(){
+  $('audioCountBadge').textContent=audioTracks.length+' Lagu';
+  $('totalAudioDurationDisplay').textContent=formatTime(totalAudioDuration);
+  $('audioPlaylist').innerHTML=audioTracks.map((t,i)=>`<div class="flex justify-between items-center p-2 bg-slate-800 rounded text-sm"><span class="truncate">${escapeHtml(t.name)}</span><button onclick="removeAudio(${i})" class="text-red-400 hover:text-red-300"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+  renderTimelineMarkers();
+}
+
+function removeAudio(i){
+  audioTracks.splice(i,1);
+  if(audioTracks.length)mergeAudioTracks().then(renderAudioUI);
+  else{audioElement.removeAttribute('src');totalAudioDuration=0;renderAudioUI();updatePlaybackUI();selectedPhotoId=null;updatePhotosUI()}
+}
+
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-async function handlePhotosUpload(e){for(const file of e.target.files){const url=URL.createObjectURL(file),img=new Image();await new Promise(res=>{img.onload=res;img.onerror=res;img.src=url});if(img.naturalWidth)photos.push({id:crypto.randomUUID?crypto.randomUUID():Date.now()+Math.random(),title:file.name,url,imgObj:img,startTime:0})}e.target.value='';autoDistributePhotos()}
-function autoDistributePhotos(){if(!photos.length){updatePhotosUI();return}const interval=(totalAudioDuration||30)/photos.length;photos.forEach((p,i)=>p.startTime=Number((i*interval).toFixed(1)));photos.sort((a,b)=>a.startTime-b.startTime);updatePhotosUI();renderCanvasFrame(audioElement.currentTime||0)}
-function updatePhotoTime(id,v){const p=photos.find(x=>x.id==id);if(p)p.startTime=Math.max(0,Number(v)||0);photos.sort((a,b)=>a.startTime-b.startTime);updatePhotosUI();renderCanvasFrame(audioElement.currentTime||0)}
-function deletePhoto(id){const p=photos.find(x=>x.id==id);if(p)URL.revokeObjectURL(p.url);photos=photos.filter(x=>x.id!=id);if(selectedPhotoId==id)selectedPhotoId=photos[0]?.id||null;updatePhotosUI();renderCanvasFrame(0)}
-function addPhotoAtCurrentTime(){if(!selectedPhotoId&&photos[0])selectedPhotoId=photos[0].id;if(selectedPhotoId)updatePhotoTime(selectedPhotoId,audioElement.currentTime)}
-function updatePhotosUI(){$('photoCountBadge').textContent=photos.length+' Foto';$('emptyCanvasNotice').style.display=photos.length?'none':'flex';$('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div onclick="selectedPhotoId='${p.id}';updatePhotosUI()" class="p-2 rounded-xl border ${selectedPhotoId==p.id?'border-indigo-500 bg-indigo-900/30':'border-slate-800 bg-slate-950'} flex gap-2 items-center"><img src="${p.url}" class="w-11 h-11 object-cover rounded"><div class="min-w-0 flex-1"><p class="text-xs truncate">${escapeHtml(p.title)}</p><input onclick="event.stopPropagation()" onchange="updatePhotoTime('${p.id}',this.value)" type="number" min="0" step=".1" value="${p.startTime}" class="mt-1 w-16 bg-slate-800 text-xs rounded px-1"></div><button onclick="event.stopPropagation();deletePhoto('${p.id}')" class="text-red-400">✕</button></div>`).join(''):'<p class="text-center text-xs text-slate-500 py-8">Belum ada foto.</p>';renderTimelineMarkers()}
-function renderTimelineMarkers(){const t=$('timelineMarkersTrack');t.innerHTML='';photos.forEach(p=>{if(totalAudioDuration){const x=document.createElement('i');x.className='absolute top-0 bottom-0 w-0.5 bg-indigo-400';x.style.left=Math.min(100,p.startTime/totalAudioDuration*100)+'%';t.append(x)}})}
-function generateVisualiserBars(){const el=$('timelineVisualiser');el.innerHTML=Array.from({length:45},()=>`<i class="flex-1 bg-indigo-500 rounded" style="height:${20+Math.random()*70}%"></i>`).join('')}
-function renderCanvasFrame(time){ctx.clearRect(0,0,canvas.width,canvas.height);if(!photos.length)return;let i=photos.findLastIndex?p=>p.startTime<=time:-1;if(typeof i==='function')i=i(time);else for(let n=0;n<photos.length;n++)if(photos[n].startTime<=time)i=n;if(i<0)i=0;const p=photos[i],next=photos[i+1],duration=(next?next.startTime:totalAudioDuration||time+10)-p.startTime,progress=Math.max(0,Math.min(1,(time-p.startTime)/(duration||1)));drawPhoto(p,progress,1);if($('transitionToggle').checked&&next&&next.startTime-time<transitionDuration&&next.startTime>time)drawPhoto(next,0,1-(next.startTime-time)/transitionDuration)}
-function drawPhoto(p,progress,alpha){const w=canvas.width,h=canvas.height,img=p.imgObj;if(!img||!img.complete)return;ctx.save();ctx.globalAlpha=alpha;const ia=img.width/img.height,ca=w/h,bgW=ia>ca?h*ia:w,bgH=ia>ca?h:w/ia;ctx.filter='blur(28px) brightness(.5)';ctx.drawImage(img,(w-bgW*1.15)/2,(h-bgH*1.15)/2,bgW*1.15,bgH*1.15);ctx.filter='none';const scale=$('kenBurnsToggle').checked?1+progress*.08:1;const maxW=w*.86,maxH=h*.86,fw=ia>maxW/maxH?maxW:maxH*ia,fh=ia>maxW/maxH?maxW/ia:maxH;ctx.translate(w/2,h/2);ctx.scale(scale,scale);ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=30;ctx.drawImage(img,-fw/2,-fh/2,fw,fh);ctx.restore()}
-async function startVideoGeneration(){if(!audioElement.src||!photos.length){alert('Unggah audio dan foto terlebih dahulu.');return}if(!canvas.captureStream||!window.MediaRecorder){alert('Browser ini tidak mendukung perekaman video. Gunakan Chrome/Edge terbaru.');return}const modal=$('exportModal');modal.classList.remove('hidden');modal.classList.add('flex');$('processingState').classList.remove('hidden');$('successState').classList.add('hidden');$('closeModalBtn').classList.add('hidden');audioElement.pause();audioElement.currentTime=0;try{if(!audioCtx)audioCtx=new AudioContext();if(audioCtx.state==='suspended')await audioCtx.resume();if(!mediaSourceNode)mediaSourceNode=audioCtx.createMediaElementSource(audioElement);const dest=audioCtx.createMediaStreamDestination();mediaSourceNode.connect(dest);mediaSourceNode.connect(audioCtx.destination);const stream=new MediaStream([...canvas.captureStream(30).getVideoTracks(),...dest.stream.getAudioTracks()]);const mime=['video/webm;codecs=vp9,opus','video/webm;codecs=vp8,opus','video/webm'].find(MediaRecorder.isTypeSupported);const rec=new MediaRecorder(stream,mime?{mimeType:mime}:{});const chunks=[];rec.ondataavailable=e=>e.data.size&&chunks.push(e.data);rec.onstop=()=>{mediaSourceNode.disconnect(dest);const url=URL.createObjectURL(new Blob(chunks,{type:mime||'video/webm'}));$('renderedVideoPreview').src=url;$('downloadVideoBtn').href=url;$('processingState').classList.add('hidden');$('successState').classList.remove('hidden');$('successState').classList.add('flex');$('closeModalBtn').classList.remove('hidden')};rec.start(100);await audioElement.play();renderTimer=setInterval(()=>{const pct=Math.min(100,audioElement.currentTime/(totalAudioDuration||1)*100);$('exportProgressBar').style.width=pct+'%';$('exportProgressPercent').textContent=Math.round(pct)+'%';$('exportProgressTime').textContent=formatTime(audioElement.currentTime)+' / '+formatTime(totalAudioDuration);renderCanvasFrame(audioElement.currentTime);if(audioElement.ended){clearInterval(renderTimer);rec.stop()}},33)}catch(err){alert('Gagal membuat video: '+err.message);closeExportModal()}}
-function closeExportModal(){clearInterval(renderTimer);$('exportModal').classList.add('hidden');$('exportModal').classList.remove('flex')}
-window.addEventListener('load',()=>{updateCanvasDimensions();updatePhotosUI();generateVisualiserBars()});window.addEventListener('resize',updateCanvasDimensions);
+
+async function handlePhotosUpload(e){
+  for(const file of e.target.files){
+    const url=URL.createObjectURL(file),img=new Image();
+    await new Promise(res=>{img.onload=res;img.onerror=res;img.src=url});
+    if(img.naturalWidth){
+      photos.push({id:Date.now()+Math.random(),url,imgObj:img,startTime:0});
+    }
+  }
+  autoDistributePhotos();
+}
+
+function autoDistributePhotos(){
+  if(!photos.length){updatePhotosUI();return}
+  const interval=(totalAudioDuration||30)/photos.length;
+  photos.forEach((p,i)=>p.startTime=Number((i*interval).toFixed(1)));
+  updatePhotosUI();
+}
+
+function updatePhotoTime(id,v){
+  const p=photos.find(x=>x.id==id);
+  if(p)p.startTime=Math.max(0,Number(v)||0);
+  photos.sort((a,b)=>a.startTime-b.startTime);
+  updatePhotosUI();
+  renderCanvasFrame(audioElement.currentTime||0);
+}
+
+function deletePhoto(id){
+  const p=photos.find(x=>x.id==id);
+  if(p)URL.revokeObjectURL(p.url);
+  photos=photos.filter(x=>x.id!=id);
+  if(selectedPhotoId==id)selectedPhotoId=photos[0]?.id||null;
+  updatePhotosUI();
+  renderCanvasFrame(audioElement.currentTime||0);
+}
+
+function addPhotoAtCurrentTime(){
+  if(!selectedPhotoId&&photos[0])selectedPhotoId=photos[0].id;
+  if(selectedPhotoId)updatePhotoTime(selectedPhotoId,audioElement.currentTime)
+}
+
+function updatePhotosUI(){
+  $('photoCountBadge').textContent=photos.length+' Foto';
+  $('emptyCanvasNotice').style.display=photos.length?'none':'flex';
+  $('photosList').innerHTML=photos.length?photos.map((p,i)=>`<div class="p-2 bg-slate-800 rounded"><div class="flex gap-2 mb-1"><div class="w-12 h-12 rounded bg-slate-700 overflow-hidden flex-shrink-0"><img src="${p.url}" class="w-full h-full object-cover"></div><div class="flex-1"><div class="text-xs text-slate-400">Waktu</div><input type="number" value="${p.startTime}" min="0" step="0.1" onchange="updatePhotoTime(${p.id},this.value)" class="w-full px-2 py-1 bg-slate-900 border border-slate-700 rounded text-xs text-slate-100"></div><button onclick="deletePhoto(${p.id})" class="text-red-400 hover:text-red-300 px-2"><i class="fa-solid fa-trash"></i></button></div></div>`).join(''):'<p class="text-slate-400 text-sm">Tidak ada foto</p>';
+  renderTimelineMarkers();
+  renderCanvasFrame(audioElement.currentTime||0);
+}
+
+function renderTimelineMarkers(){
+  const t=$('timelineMarkersTrack');
+  t.innerHTML='';
+  photos.forEach(p=>{
+    if(totalAudioDuration){
+      const x=document.createElement('i');
+      x.className='absolute top-0 bottom-0 w-0.5 bg-violet-500 opacity-70';
+      x.style.left=(p.startTime/totalAudioDuration*100)+'%';
+      t.appendChild(x);
+    }
+  });
+}
+
+function generateVisualiserBars(){
+  const el=$('timelineVisualiser');
+  el.innerHTML=Array.from({length:45},()=>`<i class="flex-1 bg-indigo-500 rounded" style="height:${20+Math.random()*70}%"></i>`).join('');
+}
+
+function renderCanvasFrame(time){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  if(!photos.length)return;
+  let i=photos.findLastIndex?p=>p.startTime<=time:-1;
+  if(typeof i==='function')i=i(time);else for(let n=photos.length-1;n>=0;n--)if(photos[n].startTime<=time){i=n;break}
+  if(i>=0){const cp=photos[i],np=photos[i+1];let alpha=1;if(np){const gap=np.startTime-cp.startTime;alpha=Math.max(0,1-(time-cp.startTime)/(gap*transitionDuration))}const progress=np?Math.min(1,(time-cp.startTime)/(transitionDuration*(np.startTime-cp.startTime))):0;drawPhoto(cp,progress,alpha);if(np&&progress<1)drawPhoto(np,progress,1-alpha)}
+}
+
+function drawPhoto(p,progress,alpha){
+  const w=canvas.width,h=canvas.height,img=p.imgObj;
+  if(!img||!img.complete)return;
+  ctx.save();
+  ctx.globalAlpha=alpha;
+  const ia=img.width/img.height,ca=w/h,bgW=ia>ca?h*ia:w,bgH=ia>ca?h:w/ia,x=(w-bgW)/2,y=(h-bgH)/2;
+  ctx.drawImage(img,x,y,bgW,bgH);
+  ctx.restore();
+}
+
+async function startVideoGeneration(){
+  if(!audioElement.src||!photos.length){alert('Unggah audio dan foto terlebih dahulu.');return}
+  if(!canvas.captureStream||!window.MediaRecorder){alert('Browser ini tidak mendukung export video.');return}
+  
+  $('exportModal').classList.remove('hidden');
+  $('exportModal').classList.add('flex');
+  
+  const stream=canvas.captureStream(30),audioTrack=audioElement.captureStream().getAudioTracks()[0];
+  stream.addTrack(audioTrack);
+  
+  const recorder=new MediaRecorder(stream,{mimeType:'video/webm;codecs=vp9,opus'});
+  const chunks=[];
+  recorder.ondataavailable=e=>chunks.push(e.data);
+  
+  const startTime=Date.now(),duration=totalAudioDuration*1000;
+  recorder.start();
+  audioElement.play();
+  
+  const updateProgress=()=>{
+    const elapsed=Date.now()-startTime;
+    const pct=Math.min(100,Math.round(elapsed/duration*100));
+    $('exportProgress').style.width=pct+'%';
+    $('exportStatusText').textContent=`${pct}%`;
+    if(elapsed<duration)setTimeout(updateProgress,100);
+  };
+  updateProgress();
+  
+  await new Promise(res=>setTimeout(res,duration+500));
+  recorder.stop();
+  audioElement.pause();
+  audioElement.currentTime=0;
+  
+  await new Promise(res=>recorder.onstop=res);
+  const blob=new Blob(chunks,{type:'video/webm'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='fotovibe-'+Date.now()+'.webm';
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  setTimeout(closeExportModal,1000);
+}
+
+function closeExportModal(){
+  clearInterval(renderTimer);
+  $('exportModal').classList.add('hidden');
+  $('exportModal').classList.remove('flex');
+}
+
+window.addEventListener('load',()=>{updateCanvasDimensions();updatePhotosUI();generateVisualiserBars()});
+window.addEventListener('resize',updateCanvasDimensions);
 </script></body></html>
